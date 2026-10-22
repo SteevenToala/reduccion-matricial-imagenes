@@ -340,9 +340,14 @@ def main():
     if len(sys.argv) > 1 and not sys.argv[1].isdigit():
         ruta_imagen = sys.argv[1]
     else:
-        ruta_default = os.path.join("imagenes", "imagen_ejemplo.jpg")
-        if not os.path.exists(ruta_default):
-            ruta_default = "imagen_ejemplo.jpg"
+        dir_script = os.path.dirname(os.path.abspath(__file__))
+        candidatos = [
+            os.path.join(dir_script, "imagen_ejemplo.jpg"),
+            os.path.join(os.path.dirname(dir_script), "imagenes", "imagen_ejemplo.jpg"),
+            os.path.join(dir_script, "imagenes", "imagen_ejemplo.jpg"),
+            "imagen_ejemplo.jpg"
+        ]
+        ruta_default = next((c for c in candidatos if os.path.exists(c)), "imagen_ejemplo.jpg")
         entrada = input(f"\nIngrese la ruta de la imagen [Presione ENTER para '{ruta_default}']: ").strip()
         ruta_imagen = entrada if entrada else ruta_default
 

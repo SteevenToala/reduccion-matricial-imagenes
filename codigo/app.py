@@ -15,7 +15,8 @@ import numpy as np
 import cv2
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
+DIR_CODIGO = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(DIR_CODIGO, "templates"))
 
 # =============================================================================
 # ALGORITMOS FUNDAMENTALES DE REDUCCIÓN (SIN USAR RESIZE NI IMRESIZE)
@@ -99,18 +100,17 @@ def array_a_base64(img_bgr: np.ndarray) -> str:
 
 
 # Imagen por defecto en memoria
-CARPETA_IMAGENES = os.path.join(os.path.dirname(__file__), "imagenes")
-os.makedirs(CARPETA_IMAGENES, exist_ok=True)
-RUTA_DEF = os.path.join(CARPETA_IMAGENES, "imagen_ejemplo.jpg")
+candidatos_ruta = [
+    os.path.join(DIR_CODIGO, "imagen_ejemplo.jpg"),
+    os.path.join(os.path.dirname(DIR_CODIGO), "imagenes", "imagen_ejemplo.jpg"),
+    os.path.join(DIR_CODIGO, "imagenes", "imagen_ejemplo.jpg"),
+]
+RUTA_DEF = next((r for r in candidatos_ruta if os.path.exists(r)), candidatos_ruta[0])
 if not os.path.exists(RUTA_DEF):
-    ruta_raiz = os.path.join(os.path.dirname(__file__), "imagen_ejemplo.jpg")
-    if os.path.exists(ruta_raiz):
-        RUTA_DEF = ruta_raiz
-    else:
-        # Generar sintética
-        img_synth = np.zeros((400, 600, 3), dtype=np.uint8)
-        cv2.circle(img_synth, (300, 200), 100, (50, 180, 255), -1)
-        cv2.imwrite(RUTA_DEF, img_synth)
+    # Generar sintética si no existe
+    img_synth = np.zeros((400, 600, 3), dtype=np.uint8)
+    cv2.circle(img_synth, (300, 200), 100, (50, 180, 255), -1)
+    cv2.imwrite(RUTA_DEF, img_synth)
 
 IMAGEN_ACTUAL = cv2.imread(RUTA_DEF)
 

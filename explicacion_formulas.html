@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Visual: Fórmulas y Código de Reducción de Imágenes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Fira+Code:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
+    <style>
+        :root {
+            --bg: #070d18;
+            --surface: #0f172a;
+            --surface2: #162238;
+            --surface3: #1e2f4c;
+            --border: #263852;
+            --text: #f1f5f9;
+            --muted: #8fa0b8;
+            --blue: #38bdf8;
+            --green: #34d399;
+            --amber: #fbbf24;
+            --red: #f87171;
+            --purple: #c084fc;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            padding: 2.5rem 1.25rem;
+            display: flex;
+            justify-content: center;
+        }
+        .wrap { max-width: 1080px; width: 100%; }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .pill {
+            display: inline-block;
+            background: rgba(56, 189, 248, .12);
+            color: var(--blue);
+            border: 1px solid rgba(56, 189, 248, .35);
+            padding: .35rem 1.1rem;
+            border-radius: 9999px;
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            font-size: 2.3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 20%, #38bdf8 70%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: .6rem;
+            line-height: 1.25;
+        }
+        .sub { color: var(--muted); font-size: 1.05rem; max-width: 780px; margin: 0 auto; }
+
+        /* Diccionario */
+        .diccionario {
+            background: linear-gradient(180deg, #131f37 0%, #0e1728 100%);
+            border: 1px solid #38bdf840;
+            border-radius: 18px;
+            padding: 1.75rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 12px 35px rgba(0,0,0,.45);
+        }
+        .dicc-head { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.25rem; }
+        .dicc-head h3 { font-size: 1.2rem; font-weight: 800; color: #fff; }
+        .dicc-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        .dicc-table th {
+            background: rgba(56, 189, 248, .12);
+            color: var(--blue);
+            text-align: left;
+            padding: .75rem 1rem;
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+        }
+        .dicc-table td { padding: .8rem 1rem; border-bottom: 1px solid var(--border); }
+        .dicc-table tr:last-child td { border-bottom: none; }
+        .badge-sym {
+            background: rgba(248, 113, 113, .15);
+            color: var(--red);
+            border: 1px solid rgba(248, 113, 113, .3);
+            padding: .2rem .55rem;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: .84rem;
+            font-weight: 700;
+        }
+        .badge-var {
+            background: rgba(52, 211, 153, .15);
+            color: var(--green);
+            border: 1px solid rgba(52, 211, 153, .3);
+            padding: .2rem .65rem;
+            border-radius: 6px;
+            font-family: 'Fira Code', monospace;
+            font-size: .85rem;
+            font-weight: 700;
+        }
+
+        /* Secciones */
+        .sec {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.2rem;
+            margin-bottom: 2.5rem;
+            position: relative;
+            box-shadow: 0 10px 35px rgba(0,0,0,.35);
+        }
+        .sec::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 5px; height: 100%;
+            background: var(--blue);
+        }
+        .sec.green::before { background: var(--green); }
+        .sec.amber::before { background: var(--amber); }
+        .sec.purple::before { background: var(--purple); }
+        .sec.red::before { background: var(--red); }
+        
+        .sec-head { display: flex; align-items: center; gap: .85rem; margin-bottom: 1.35rem; }
+        .sec-icon { font-size: 1.6rem; }
+        h2 { font-size: 1.35rem; font-weight: 800; color: #fff; }
+        .lbadge {
+            background: rgba(56, 189, 248, .15);
+            color: var(--blue);
+            border: 1px solid rgba(56, 189, 248, .35);
+            padding: .25rem .75rem;
+            border-radius: 8px;
+            font-size: .75rem;
+            font-weight: 700;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Comparativas */
+        .formula-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin: 1.35rem 0; }
+        @media(max-width: 768px) { .formula-compare { grid-template-columns: 1fr; } }
+        .fcard-box { border-radius: 14px; padding: 1.25rem; }
+        .fcard-box.informe { background: rgba(248, 113, 113, .06); border: 1px solid rgba(248, 113, 113, .25); }
+        .fcard-box.sencilla { background: rgba(52, 211, 153, .06); border: 1px solid rgba(52, 211, 153, .25); }
+        .flabel { font-size: .75rem; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; margin-bottom: .6rem; }
+        .flabel.red { color: var(--red); }
+        .flabel.green { color: var(--green); }
+        .math-render { margin: .6rem 0; font-size: 1.15rem; color: #fff; }
+
+        /* Grid visual del bloque */
+        .grid-visual {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .pixel-table { border-collapse: collapse; }
+        .pixel-table td {
+            width: 44px; height: 44px;
+            border: 2px solid var(--border);
+            text-align: center;
+            font-family: 'Fira Code', monospace;
+            font-size: .88rem;
+            font-weight: 700;
+            background: #091122;
+        }
+        .pixel-table td.center { background: rgba(56, 189, 248, .25); border-color: var(--blue); color: #fff; }
+        .pixel-table td.corner { background: rgba(248, 113, 113, .2); border-color: var(--red); color: #fff; }
+        .result-box {
+            background: #091122;
+            border: 2px dashed var(--green);
+            border-radius: 12px;
+            padding: 1.2rem 1.6rem;
+            text-align: center;
+        }
+        .result-val { font-size: 2.2rem; font-weight: 800; color: var(--green); font-family: 'Fira Code', monospace; }
+
+        /* Code box */
+        pre {
+            background: #060b14;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.1rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', monospace;
+            font-size: .84rem;
+            color: #cbd5e1;
+            margin: 1rem 0;
+        }
+        .kw { color: #f472b6; }
+        .fn { color: #38bdf8; }
+        .var { color: #34d399; }
+        .cm { color: #64748b; font-style: italic; }
+
+        /* Acordeón */
+        details {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: .85rem;
+            overflow: hidden;
+            transition: all .2s;
+        }
+        details[open] { border-color: var(--blue); }
+        summary {
+            padding: 1rem 1.25rem;
+            font-weight: 700;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #fff;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '+'; font-size: 1.3rem; color: var(--blue); }
+        details[open] summary::after { content: '−'; }
+        .details-body {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        .highlight-card {
+            background: linear-gradient(135deg, rgba(56, 189, 248, .1), rgba(16, 185, 129, .08));
+            border: 1px solid rgba(56, 189, 248, .3);
+            border-radius: 14px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrap">
+
+    <header>
+        <div class="pill">Inteligencia Artificial • Universidad Técnica de Ambato</div>
+        <h1>Guía de Fórmulas y Código de Reducción</h1>
+        <p class="sub">Explicación conceptual y matemática paso a paso de los 4 métodos de reducción sin funciones automáticas (<code>cv2.resize</code> / <code>imresize</code>), con matrices impares ($3\times3, 5\times5, 7\times7$).</p>
+    </header>
+
+    <!-- DICCIONARIO -->
+    <div class="diccionario">
+        <div class="dicc-head">
+            <span>📖</span>
+            <h3>Diccionario de Equivalencias: De la Teoría a tu Código</h3>
+        </div>
+        <table class="dicc-table">
+            <thead>
+                <tr>
+                    <th>Símbolo Teórico</th>
+                    <th>¿Qué significa en cristiano?</th>
+                    <th>Variable en Python (<code>codigo/main.py</code>)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="badge-sym">M &times; N</span></td>
+                    <td>Dimensiones originales (Alto &times; Ancho en píxeles)</td>
+                    <td><span class="badge-var">alto_orig, ancho_orig</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">k &isin; {3, 5, 7}</span></td>
+                    <td>Factor de salto impar (tamaño de la ventana de píxeles)</td>
+                    <td><span class="badge-var">paso_k</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">M' &times; N'</span></td>
+                    <td>Nuevas dimensiones tras reducir (M/k &times; N/k)</td>
+                    <td><span class="badge-var">alto_nuevo, ancho_nuevo</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">k&sup2;</span></td>
+                    <td>Total de píxeles por bloque (3&sup2;=9, 5&sup2;=25, 7&sup2;=49)</td>
+                    <td><span class="badge-var">total_pixeles_bloque</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">I(i&middot;k, j&middot;k)</span></td>
+                    <td>Muestreo directo por saltos (toma el píxel y omite el resto)</td>
+                    <td><span class="badge-var">imagen[::paso_k, ::paso_k]</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">&sum; I / k&sup2;</span></td>
+                    <td>Promedio aritmético del bloque (Mean Pooling)</td>
+                    <td><span class="badge-var">promedio</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">mediana(B)</span></td>
+                    <td>Valor central del bloque ordenado (antirruido)</td>
+                    <td><span class="badge-var">mediana_valor</span></td>
+                </tr>
+                <tr>
+                    <td><span class="badge-sym">K(u, v)</span></td>
+                    <td>Máscara gaussiana 2D normalizada (&sum; K = 1.0)</td>
+                    <td><span class="badge-var">kernel_normalizado</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- SECCIÓN 0: MATRICES IMPARES -->
+    <div class="sec red">
+        <div class="sec-head">
+            <span class="sec-icon">⚖️</span>
+            <div>
+                <h2>¿Por qué usamos estrictamente Matrices Impares (3&times;3, 5&times;5, 7&times;7)?</h2>
+                <span class="lbadge red">FUNDAMENTO MATEMÁTICO DEL PROFESOR</span>
+            </div>
+        </div>
+
+        <p>El profesor exigió matrices impares debido a 3 leyes físicas y matemáticas del procesamiento digital de imágenes:</p>
+
+        <div class="formula-compare">
+            <div class="fcard-box informe">
+                <div class="flabel red">❌ Matrices Pares (2&times;2, 4&times;4)</div>
+                <p><strong>Centro fraccionario:</strong> En una matriz $2\times2$, el centro cae en $(0.5, 0.5)$. ¡No existe un píxel físico en el centro!</p>
+                <p><strong>Mediana inventada:</strong> Al haber 4 datos, la mediana obliga a promediar los dos centrales, desvirtuando la propiedad no lineal del filtro.</p>
+            </div>
+            <div class="fcard-box sencilla">
+                <div class="flabel green">✅ Matrices Impares (3&times;3, 5&times;5, 7&times;7)</div>
+                <p><strong>Centro entero simétrico:</strong> El centro está en $(\frac{k-1}{2}, \frac{k-1}{2})$, correspondiente a un píxel real exacto: $(1, 1)$ en $3\times3$, $(2, 2)$ en $5\times5$.</p>
+                <p><strong>Mediana pura:</strong> Al haber 9, 25 o 49 celdas (impar), la mediana es <strong>un píxel real de la escena</strong>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 1: MÉTODO DE SALTOS -->
+    <div class="sec">
+        <div class="sec-head">
+            <span class="sec-icon">🦘</span>
+            <div>
+                <h2>Método 1: Submuestreo por Saltos (Decimación Espacial)</h2>
+                <span class="lbadge">DECIMACIÓN DIRECTA</span>
+            </div>
+        </div>
+
+        <p>Recorre la matriz original tomando únicamente una muestra cada $k$ píxeles y descartando los demás.</p>
+
+        <div class="formula-compare">
+            <div class="fcard-box informe">
+                <div class="flabel red">Fórmula Matemática del Informe</div>
+                <div class="math-render">$$I_{\text{saltos}}(i, j) = I_{\text{original}}(i \cdot k, \; j \cdot k)$$</div>
+            </div>
+            <div class="fcard-box sencilla">
+                <div class="flabel green">En Cristiano</div>
+                <p>«Salto de $k$ en $k$ casilleros. Si $k=3$, cojo el píxel $(0, 0)$, luego el $(0, 3)$, luego el $(0, 6)$, etc.»</p>
+            </div>
+        </div>
+
+        <div class="grid-visual">
+            <div>
+                <p style="font-weight:700; margin-bottom:.5rem;">Bloque original 3&times;3:</p>
+                <table class="pixel-table">
+                    <tr><td class="corner">58</td><td>59</td><td>59</td></tr>
+                    <tr><td>56</td><td>55</td><td>54</td></tr>
+                    <tr><td>41</td><td>42</td><td>44</td></tr>
+                </table>
+            </div>
+            <div style="font-size:2rem; color:var(--blue);">&rarr;</div>
+            <div class="result-box">
+                <p style="font-size:.75rem; color:var(--muted); text-transform:uppercase;">Píxel Resultante</p>
+                <div class="result-val">58</div>
+                <p style="font-size:.75rem; color:var(--muted);">Toma directamente la esquina (0, 0)</p>
+            </div>
+        </div>
+
+        <pre><span class="cm"># Implementación vectorizada en Python</span>
+<span class="var">imagen_reducida</span> = <span class="var">imagen_original</span>[::<span class="var">paso_k</span>, ::<span class="var">paso_k</span>]</pre>
+    </div>
+
+    <!-- SECCIÓN 2: MÉTODO PROMEDIO -->
+    <div class="sec green">
+        <div class="sec-head">
+            <span class="sec-icon">📊</span>
+            <div>
+                <h2>Método 2: Promedio de Bloques Redundantes (Mean Pooling)</h2>
+                <span class="lbadge green">REDUNDANCIA ESPACIAL</span>
+            </div>
+        </div>
+
+        <p>Aprovecha que los píxeles contiguos son redundantes. Suma los $k^2$ píxeles vecinos y extrae la media aritmética.</p>
+
+        <div class="formula-compare">
+            <div class="fcard-box informe">
+                <div class="flabel red">Fórmula Matemática del Informe</div>
+                <div class="math-render">$$I_{\text{promedio}}(i, j) = \text{round}\left( \frac{1}{k^2} \sum_{u=0}^{k-1} \sum_{v=0}^{k-1} I_{\text{orig}}(i\cdot k + u, j\cdot k + v) \right)$$</div>
+            </div>
+            <div class="fcard-box sencilla">
+                <div class="flabel green">En Cristiano</div>
+                <div class="math-render">$$\text{Promedio} = \frac{\text{Suma de los } 9 \text{ píxeles del bloque}}{9}$$</div>
+            </div>
+        </div>
+
+        <div class="grid-visual">
+            <div>
+                <p style="font-weight:700; margin-bottom:.5rem;">Bloque original 3&times;3:</p>
+                <table class="pixel-table">
+                    <tr><td>58</td><td>59</td><td>59</td></tr>
+                    <tr><td>56</td><td>55</td><td>54</td></tr>
+                    <tr><td>41</td><td>42</td><td>44</td></tr>
+                </table>
+            </div>
+            <div style="font-size:2rem; color:var(--green);">&rarr;</div>
+            <div class="result-box">
+                <p style="font-size:.75rem; color:var(--muted); text-transform:uppercase;">Píxel Resultante</p>
+                <div class="result-val">52</div>
+                <p style="font-size:.75rem; color:var(--muted);">Suma 468 / 9 = 52.0 &rarr; 52</p>
+            </div>
+        </div>
+
+        <pre><span class="cm"># Bloques de k x k promediados en NumPy</span>
+<span class="var">bloques</span> = <span class="var">recorte</span>.<span class="fn">reshape</span>(<span class="var">alto_n</span>, <span class="var">paso_k</span>, <span class="var">ancho_n</span>, <span class="var">paso_k</span>)
+<span class="var">resultado</span> = np.<span class="fn">round</span>(<span class="var">bloques</span>.<span class="fn">mean</span>(axis=(1, 3))).<span class="fn">astype</span>(np.uint8)</pre>
+    </div>
+
+    <!-- SECCIÓN 3: MÉTODO MEDIANA -->
+    <div class="sec amber">
+        <div class="sec-head">
+            <span class="sec-icon">🛡️</span>
+            <div>
+                <h2>Método 3: Filtro Mediana de Bloques (Median Pooling)</h2>
+                <span class="lbadge amber">ROBUSTEZ ANTIRRUIDO</span>
+            </div>
+        </div>
+
+        <p>Ordena los $k^2$ valores del bloque de menor a mayor y selecciona el valor del centro. Si hay ruido impulsivo ("sal y pimienta"), la mediana lo ignora completamente.</p>
+
+        <div class="grid-visual">
+            <div>
+                <p style="font-weight:700; margin-bottom:.5rem;">Valores ordenados (9 datos):</p>
+                <p style="font-family:'Fira Code',monospace; font-size:.9rem; color:var(--muted);">[41, 42, 44, 54, <strong style="color:var(--amber); font-size:1.1rem;">55</strong>, 56, 58, 59, 59]</p>
+            </div>
+            <div style="font-size:2rem; color:var(--amber);">&rarr;</div>
+            <div class="result-box">
+                <p style="font-size:.75rem; color:var(--muted); text-transform:uppercase;">Píxel Mediano</p>
+                <div class="result-val" style="color:var(--amber);">55</div>
+                <p style="font-size:.75rem; color:var(--muted);">Elemento central (Índice 4)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 4: MÉTODO GAUSSIANO -->
+    <div class="sec purple">
+        <div class="sec-head">
+            <span class="sec-icon">🔔</span>
+            <div>
+                <h2>Método 4: Convolución Gaussiana 2D Discreta</h2>
+                <span class="lbadge purple">SUAVIZADO PONDERADO</span>
+            </div>
+        </div>
+
+        <p>Aplica una máscara de pesos normalizada ($\sum K = 1.0$), donde el centro del bloque recibe mayor importancia y la periferia decae suavemente.</p>
+
+        <div class="formula-compare">
+            <div class="fcard-box informe">
+                <div class="flabel red">Fórmula Gaussiana 2D</div>
+                <div class="math-render">$$G(x, y) = \frac{1}{2\pi \sigma^2} e^{-\frac{x^2+y^2}{2\sigma^2}}$$</div>
+            </div>
+            <div class="fcard-box sencilla">
+                <div class="flabel green">Pesos del Kernel 3&times;3 (Normalizado)</div>
+                <p style="font-family:'Fira Code',monospace; font-size:.85rem; color:#fff;">
+                    [ 0.075, 0.124, 0.075 ]<br>
+                    [ 0.124, <strong>0.204</strong>, 0.124 ] &larr; Centro con mayor peso<br>
+                    [ 0.075, 0.124, 0.075 ]
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN 5: PREGUNTAS Y RESPUESTAS PARA LA SUSTENTACIÓN -->
+    <div class="sec">
+        <div class="sec-head">
+            <span class="sec-icon">🎓</span>
+            <div>
+                <h2>Banco de Preguntas para Sustentación con el Docente</h2>
+                <span class="lbadge">PREGUNTAS TIPO EXAMEN</span>
+            </div>
+        </div>
+
+        <details open>
+            <summary>1. ¿Por qué saltar de 3 en 3 reduce la imagen a la novena parte (11.1%) y no a la tercera parte?</summary>
+            <div class="details-body">
+                Porque la reducción se produce en <strong>dos dimensiones ortogonales a la vez</strong>: en filas (alto $/3$) y en columnas (ancho $/3$). Por tanto, la reducción de área es:
+                $$\text{Factor de Área} = \frac{1}{3} \times \frac{1}{3} = \frac{1}{9} \approx 11.11\% \quad (\mathbf{88.89\% \text{ de ahorro de memoria}})$$
+            </div>
+        </details>
+
+        <details>
+            <summary>2. ¿Por qué la imagen sigue reconociéndose perfectamente si eliminamos el 89% o 96% de la información?</summary>
+            <div class="details-body">
+                Debido al principio fundamental de <strong>Redundancia Espacial</strong>. En el mundo real, los píxeles vecinos pertenecen al mismo objeto continuo y poseen intensidades casi idénticas. Al eliminar los píxeles redundantes, la estructura geométrica, contornos y bordes macroscópicos se conservan fidedignamente ante el ojo humano.
+            </div>
+        </details>
+
+        <details>
+            <summary>3. ¿Cuál es la diferencia entre el método de saltos y el de promedio?</summary>
+            <div class="details-body">
+                El método de <strong>saltos</strong> es una decimación pura: toma 1 píxel y descarta 8 sin mirarlos (provoca <em>aliasing</em> o bordes pixelados si hay detalles finos). El método de <strong>promedio</strong> suma los 9 píxeles y calcula su media, funcionando como un filtro de paso bajo que preserva la energía luminosa total y reduce los artefactos de borde.
+            </div>
+        </details>
+
+        <details>
+            <summary>4. ¿Cómo procesas una imagen a color frente a una en escala de grises?</summary>
+            <div class="details-body">
+                En escala de grises la imagen es una matriz bidimensional $M \times N$. En color es un tensor tridimensional $M \times N \times 3$ (canales Rojo, Verde y Azul). El algoritmo se ejecuta idénticamente en cada canal por separado y luego se unen los tres canales reducidos.
+            </div>
+        </details>
+    </div>
+
+</div>
+
+</body>
+</html>
