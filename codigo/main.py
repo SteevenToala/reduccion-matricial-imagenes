@@ -19,6 +19,32 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from skimage.util import random_noise
+
+DIR_ACTUAL_MAIN = os.path.dirname(os.path.abspath(__file__))
+if DIR_ACTUAL_MAIN not in sys.path:
+    sys.path.insert(0, DIR_ACTUAL_MAIN)
+
+from fourier_filtros import demostrar_fourier, aplicar_filtro_fourier, declarar_matriz_filtro
+from reducir_imagen import KERNEL_ACENTUADO_8, aplicar_filtro_acentuado, reducir_por_acentuado_manual
+
+
+# =============================================================================
+# FUNCIÓN DE RUIDO DE BIBLIOTECA (NO PROGRAMADA MANUALMENTE)
+# =============================================================================
+def imnoise(imagen: np.ndarray, tipo: str = 'salt & pepper', amount: float = 0.05) -> np.ndarray:
+    """
+    Añade ruido impulsivo a una imagen utilizando la función estándar de biblioteca 
+    'random_noise' de scikit-image (equivalente directo al imnoise de MATLAB / DIP).
+    
+    NOTA IMPORTANTE:
+    Esta función NO está programada manualmente: utiliza directamente la función
+    especializada 'skimage.util.random_noise' para garantizar rigor científico.
+    """
+    modo = 's&p' if tipo in ('salt & pepper', 'salt and pepper', 's&p', 'sal_y_pimienta') else tipo
+    # Llamada directa a función de biblioteca (scikit-image), sin bucles manuales
+    imagen_con_ruido = random_noise(imagen, mode=modo, amount=amount)
+    return (np.clip(imagen_con_ruido, 0.0, 1.0) * 255).astype(np.uint8)
 
 
 # =============================================================================
@@ -417,6 +443,44 @@ def generar_graficos_informe(ruta_imagen: str, carpeta_salida_informe: str):
     plt.close()
     print(f" [OK] Figura guardada: {ruta_fig3}")
 
+    # -------------------------------------------------------------------------
+    # FIGURA 4: ROBUSTEZ ANTIRRUIDO FRENTE A IMNOISE (SALT & PEPPER)
+    # -------------------------------------------------------------------------
+    paso_ruido = 3
+    img_ruidosa = imnoise(imagen, tipo='salt & pepper', amount=0.06)
+    red_saltos_r = reducir_por_saltos(img_ruidosa, paso_ruido)
+    red_promedio_r = reducir_por_promedio(img_ruidosa, paso_ruido)
+    red_mediana_r = reducir_por_mediana(img_ruidosa, paso_ruido)
+    red_gauss_r = reducir_por_gaussiana(img_ruidosa, paso_ruido)
+
+    fig, axs = plt.subplots(1, 5, figsize=(20, 5), facecolor='white')
+    axs[0].imshow(cv2.cvtColor(img_ruidosa, cv2.COLOR_BGR2RGB))
+    axs[0].set_title(f"1. Entrada con imnoise()\n(Salt & Pepper 6%)", fontsize=11, fontweight='bold', color='#b45309')
+    axs[0].axis('off')
+
+    axs[1].imshow(cv2.cvtColor(red_saltos_r, cv2.COLOR_BGR2RGB))
+    axs[1].set_title(f"2. Saltos k={paso_ruido}\n(Puntos corruptos)", fontsize=11, fontweight='bold', color='#1e3a8a')
+    axs[1].axis('off')
+
+    axs[2].imshow(cv2.cvtColor(red_promedio_r, cv2.COLOR_BGR2RGB))
+    axs[2].set_title(f"3. Promedio k={paso_ruido}\n(Manchas difusas)", fontsize=11, fontweight='bold', color='#065f46')
+    axs[2].axis('off')
+
+    axs[3].imshow(cv2.cvtColor(red_mediana_r, cv2.COLOR_BGR2RGB))
+    axs[3].set_title(f"4. Mediana k={paso_ruido}\n(★ RUIDO ELIMINADO)", fontsize=11, fontweight='bold', color='#15803d')
+    axs[3].axis('off')
+
+    axs[4].imshow(cv2.cvtColor(red_gauss_r, cv2.COLOR_BGR2RGB))
+    axs[4].set_title(f"5. Gaussiana k={paso_ruido}\n(Artefactos atenuados)", fontsize=11, fontweight='bold', color='#6b21a8')
+    axs[4].axis('off')
+
+    plt.suptitle("Demostración Científica: Inmunidad del Filtro Mediana ante Ruido Impulsivo imnoise('salt & pepper')", fontsize=13, fontweight='bold', y=0.98)
+    plt.tight_layout()
+    ruta_fig4 = os.path.join(carpeta_salida_informe, "figura_robustez_ruido_imnoise.png")
+    plt.savefig(ruta_fig4, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f" [OK] Figura guardada: {ruta_fig4}")
+
 
 # =============================================================================
 # 8. MENÚ Y EJECUCIÓN PRINCIPAL
@@ -439,9 +503,11 @@ def main():
     print("\nOpciones disponibles:")
     print("  1. Inspección interactiva de matrices en consola y comparativa gráfica")
     print("  2. Generar todas las figuras de alta resolución para el informe LaTeX")
-    print("  3. Salir")
+    print("  3. Filtrado con Transformada de Fourier 2D (Pasa Bajos para ruido / Pasa Altos para bordes)")
+    print("  4. Filtro de Acentuado 3×3 (Matriz Laplaciana [-1,-1,-1 / -1,8,-1 / -1,-1,-1])")
+    print("  5. Salir")
 
-    opcion = input("\nSeleccione opción [1, 2 o 3, def: 2]: ").strip() or "2"
+    opcion = input("\nSeleccione opción [1, 2, 3, 4 o 5, def: 2]: ").strip() or "2"
 
     if opcion == "1":
         ruta_img = input(f"Ruta de la imagen [def: {ruta_imagen_def}]: ").strip() or ruta_imagen_def
@@ -453,6 +519,13 @@ def main():
             print(f"[ERROR] No se pudo leer la imagen: '{ruta_img}'")
             return
 
+        aplicar_ruido_opt = input("\n¿Desea inyectar ruido sal y pimienta con imnoise() de biblioteca? (s/N): ").strip().lower() == 's'
+        if aplicar_ruido_opt:
+            densidad_str = input("Densidad de ruido [def: 0.05 / 5%]: ").strip() or "0.05"
+            densidad = float(densidad_str)
+            img = imnoise(img, tipo='salt & pepper', amount=densidad)
+            print(f"[OK] Ruido inyectado con imnoise('salt & pepper', amount={densidad}) vía scikit-image.")
+
         imprimir_inspeccion_bloque(img, paso_k)
 
         # Mostrar comparativa con matplotlib
@@ -460,10 +533,11 @@ def main():
         red_promedio = reducir_por_promedio(img, paso_k)
         red_mediana = reducir_por_mediana(img, paso_k)
         red_gaussiana = reducir_por_gaussiana(img, paso_k)
+        red_acentuado = reducir_por_acentuado_manual(img, paso_k)
 
-        fig, axs = plt.subplots(1, 5, figsize=(18, 5))
+        fig, axs = plt.subplots(1, 6, figsize=(22, 4.5))
         axs[0].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-        axs[0].set_title(f"Original ({img.shape[1]}x{img.shape[0]})", fontweight='bold')
+        axs[0].set_title(f"Original {'(ruido)' if aplicar_ruido_opt else ''}\n({img.shape[1]}x{img.shape[0]})", fontweight='bold')
         axs[0].axis('off')
 
         axs[1].imshow(cv2.cvtColor(red_saltos, cv2.COLOR_BGR2RGB))
@@ -482,13 +556,84 @@ def main():
         axs[4].set_title(f"Gaussiana k={paso_k}", fontweight='bold')
         axs[4].axis('off')
 
-        plt.suptitle(f"Reducción Manual de Imagen - Paso k = {paso_k}", fontsize=13, fontweight='bold')
+        axs[5].imshow(cv2.cvtColor(red_acentuado, cv2.COLOR_BGR2RGB))
+        axs[5].set_title(f"Acentuado k={paso_k}\n(Kernel 3x3)", fontweight='bold', color='#ec4899')
+        axs[5].axis('off')
+
+        plt.suptitle(f"Reducción Manual de Imagen - Paso k = {paso_k} (Incluye Acentuado)", fontsize=13, fontweight='bold')
         plt.tight_layout()
         plt.show()
 
     elif opcion == "2":
         generar_graficos_informe(ruta_imagen_def, carpeta_informe_img)
+        # Generar también la figura de Fourier
+        ruta_fig_fourier = os.path.join(carpeta_informe_img, "demostracion_fourier_filtros.png")
+        demostrar_fourier(ruta_imagen_def, radio_corte=40.0, aplicar_ruido_previo=True, ruta_guardar=ruta_fig_fourier, mostrar=False)
+        
+        # Generar figura de demostración de Acentuado
+        img_base = cv2.imread(ruta_imagen_def)
+        if img_base is not None:
+            img_bordes = aplicar_filtro_acentuado(img_base, modo='bordes')
+            img_acent = aplicar_filtro_acentuado(img_base, modo='acentuado')
+            fig_ac, axs_ac = plt.subplots(1, 3, figsize=(16, 5))
+            axs_ac[0].imshow(cv2.cvtColor(img_base, cv2.COLOR_BGR2RGB))
+            axs_ac[0].set_title("1. Imagen Original", fontweight='bold')
+            axs_ac[0].axis('off')
+            axs_ac[1].imshow(cv2.cvtColor(img_bordes, cv2.COLOR_BGR2RGB))
+            axs_ac[1].set_title("2. Bordes Laplaciano 3x3 (∇²)\n[-1 -1 -1 / -1 8 -1 / -1 -1 -1]", fontweight='bold', color='#a855f7')
+            axs_ac[1].axis('off')
+            axs_ac[2].imshow(cv2.cvtColor(img_acent, cv2.COLOR_BGR2RGB))
+            axs_ac[2].set_title("3. Imagen Acentuada (f + ∇²)\n★ Realce de Contornos", fontweight='bold', color='#ec4899')
+            axs_ac[2].axis('off')
+            plt.suptitle("Filtro Espacial de Acentuado mediante Máscara Laplaciana de 8 Vecinos", fontsize=13, fontweight='bold')
+            plt.tight_layout()
+            ruta_fig_ac = os.path.join(carpeta_informe_img, "demostracion_filtro_acentuado.png")
+            plt.savefig(ruta_fig_ac, dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f" [OK] Figura guardada: {ruta_fig_ac}")
+
         print("\n[ÉXITO] Todas las figuras científicas fueron generadas en 'informe/imagenes/' correctamente.")
+
+    elif opcion == "3":
+        ruta_img = input(f"Ruta de la imagen [def: {ruta_imagen_def}]: ").strip() or ruta_imagen_def
+        radio_str = input("Radio de corte D0 [def: 40]: ").strip() or "40"
+        radio_corte = float(radio_str)
+        con_ruido = input("¿Inyectar ruido con imnoise() para mitigar? (S/n): ").strip().lower() != 'n'
+        demostrar_fourier(ruta_img, radio_corte=radio_corte, aplicar_ruido_previo=con_ruido, mostrar=True)
+
+    elif opcion == "4":
+        ruta_img = input(f"Ruta de la imagen [def: {ruta_imagen_def}]: ").strip() or ruta_imagen_def
+        img = cv2.imread(ruta_img)
+        if img is None:
+            print(f"[ERROR] No se pudo leer la imagen: '{ruta_img}'")
+            return
+            
+        print("\n[+] Aplicando Filtro de Acentuado 3x3:")
+        print("    Kernel Laplaciano K:")
+        print("    [ -1  -1  -1 ]")
+        print("    [ -1   8  -1 ]")
+        print("    [ -1  -1  -1 ]")
+        
+        img_bordes = aplicar_filtro_acentuado(img, modo='bordes')
+        img_acent = aplicar_filtro_acentuado(img, modo='acentuado')
+        
+        fig, axs = plt.subplots(1, 3, figsize=(16, 5.5))
+        axs[0].imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+        axs[0].set_title("1. Original", fontweight='bold')
+        axs[0].axis('off')
+        
+        axs[1].imshow(cv2.cvtColor(img_bordes, cv2.COLOR_BGR2RGB))
+        axs[1].set_title("2. Laplaciano ∇² (Bordes)\nK = [-1 -1 -1 / -1 8 -1 / -1 -1 -1]", fontweight='bold', color='#a855f7')
+        axs[1].axis('off')
+        
+        axs[2].imshow(cv2.cvtColor(img_acent, cv2.COLOR_BGR2RGB))
+        axs[2].set_title("3. Imagen Acentuada (f + ∇²)\n★ Contornos y Detalles Realzados", fontweight='bold', color='#ec4899')
+        axs[2].axis('off')
+        
+        plt.suptitle("Demostración del Filtro de Acentuado Espacial", fontsize=13, fontweight='bold')
+        plt.tight_layout()
+        plt.show()
+
     else:
         print("Saliendo...")
 

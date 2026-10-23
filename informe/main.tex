@@ -520,6 +520,89 @@ Del análisis detallado de las imágenes reducidas se desprenden las siguientes 
     \item \textbf{Estabilidad del Filtro Mediana:} La mediana retiene la nitidez de los bordes estructurales con mayor vigor que el promedio, evitando la borrosidad difusa al tiempo que elimina cualquier ruido impulsivo localizado.
 \end{enumerate}
 
+\subsection{Evaluación Experimental de Robustez Antirruido con \texttt{imnoise(salt \& pepper)}}
+Para validar experimentalmente la superioridad del filtro mediana frente a ruido impulsivo sin recurrir a implementaciones artesanales no estandarizadas, se incorporó al entorno de experimentación la función de biblioteca especializada \texttt{imnoise} (implementada formalmente mediante \texttt{skimage.util.random\_noise(image, mode='s\&p')}).
+
+Como se ilustra en la Figura~\ref{fig:comparativa_ruido}, al someter la imagen original a una contaminación impulsiva del $6\%$ de ruido sal y pimienta:
+\begin{itemize}
+    \item \textbf{Submuestreo (Saltos):} Muestra píxeles individuales con valor $0$ (negro absoluto) o $255$ (blanco saturado), magnificándolos en la imagen reducida y degradando severamente la calidad visual.
+    \item \textbf{Promedio (Redundancia):} Promedia los valores anómalos dentro de la suma del bloque, transformando los impulsos puntuales en manchas grises difusas que enturbian la escena.
+    \item \textbf{Filtro Mediana:} Al ordenar los $k^2$ elementos del bloque, los valores extremos $0$ y $255$ quedan segregados automáticamente en los extremos de la lista ordenada. El operador selecciona invariablemente la mediana central no contaminada, \textbf{eliminando el ruido sal y pimienta en su totalidad} y entregando una imagen reducida limpia y nítida.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{imagenes/figura_robustez_ruido_imnoise.png}
+    \caption{Demostración de robustez ante ruido impulsivo (\textit{salt \& pepper} al $6\%$) inyectado con \texttt{imnoise}: el filtro mediana erradica completamente los impulsos extremos sin alterar la estructura de la imagen reducida.}
+    \label{fig:comparativa_ruido}
+\end{figure}
+
+\subsection{Filtrado en Frecuencia con Transformada de Fourier 2D: Mitigación de Ruido y Extracción de Bordes}
+Siguiendo las instrucciones del docente, se implementó el filtrado en el dominio frecuencial mediante la Transformada Rápida de Fourier Bidimensional (FFT 2D) y la construcción analítica de la matriz de transferencia $H(u, v)$ a partir de una matriz inicializada en ceros.
+
+El procedimiento matemático comprende cuatro pasos secuenciales:
+\begin{enumerate}
+    \item \textbf{Transformada Rápida de Fourier 2D y Centrado:}
+    \begin{equation}
+        F(u, v) = \mathcal{F}\{f(x, y)\}, \quad F_{\text{shift}}(u, v) = \text{fftshift}(F(u, v))
+    \end{equation}
+    \item \textbf{Declaración de la Matriz de Ceros y Construcción de la Máscara $H(u, v)$:} Se inicializa una matriz $H \in \mathbb{R}^{M \times N}$ de ceros (\texttt{H = np.zeros((M, N))}). Luego, calculando la distancia euclidiana radial $D(u, v) = \sqrt{(u - M/2)^2 + (v - N/2)^2}$ respecto al centro espectral:
+    \begin{itemize}
+        \item \textbf{Filtro Pasa-Bajos Ideal (ILPF):} Se asigna $1.0$ en la región circular central donde $D(u, v) \leq D_0$. Permite el paso de frecuencias bajas continuas y bloquea las altas frecuencias donde reside el ruido impulsivo fino.
+        \item \textbf{Filtro Pasa-Altos Ideal (IHPF):} Se asigna $1.0$ en la región periférica donde $D(u, v) > D_0$, bloqueando la componente continua para aislar contornos y transiciones bruscas.
+    \end{itemize}
+    \item \textbf{Multiplicación de Matrices en Frecuencia (Teorema de Convolución):}
+    \begin{equation}
+        G(u, v) = F_{\text{shift}}(u, v) \odot H(u, v)
+    \end{equation}
+    \item \textbf{Transformada Inversa (iFFT 2D):} Reconstruye la señal en el dominio espacial extrayendo la parte real:
+    \begin{equation}
+        g(x, y) = \text{Re}\left(\mathcal{F}^{-1}\{\text{ifftshift}(G(u, v))\}\right)
+    \end{equation}
+\end{enumerate}
+
+La Figura~\ref{fig:comparativa_fourier_5_etapas} ilustra la comparativa visual de las 5 etapas: 1. Imagen Original, 2. Imagen con Ruido Sal y Pimienta inyectado con \texttt{imnoise}, 3. Espectro FFT centrado $|F(u, v)|$, 4. Imagen Filtrada Pasa-Bajos mitigando el ruido, y 5. Imagen Filtrada Pasa-Altos con los bordes de la escena.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{imagenes/comparativa_5_etapas_fourier.png}
+    \caption{Secuencia canónica de 5 etapas en frecuencia: Imagen Original $\to$ Imagen con Ruido (\texttt{imnoise}) $\to$ Espectro FFT 2D $|F(u, v)|$ $\to$ Filtrada Pasa-Bajos ($D_0=35$) mitigando el ruido $\to$ Filtrada Pasa-Altos aislando bordes.}
+    \label{fig:comparativa_fourier_5_etapas}
+\end{figure}
+
+\subsection{Filtro Espacial de Acentuado de Bordes mediante Máscara Laplaciana $3 \times 3$}
+Para complementar el análisis de realce de altas frecuencias en el dominio espacial, se incorporó el operador diferencial isotrópico de segundo orden (Laplaciano) de 8 vecinos, modelado mediante la matriz $3 \times 3$ exacta:
+\begin{equation}
+    K_{\text{acentuado}} = \begin{bmatrix}
+        -1 & -1 & -1 \\
+        -1 &  8 & -1 \\
+        -1 & -1 & -1
+    \end{bmatrix}
+\end{equation}
+
+El filtro presenta las siguientes propiedades matemáticas esenciales:
+\begin{enumerate}
+    \item \textbf{Condición de Suma Cero:} La suma algebraica de los coeficientes del kernel es nula:
+    \begin{equation}
+        \sum_{i=1}^{3}\sum_{j=1}^{3} K_{i,j} = (-1 \times 8) + 8 = 0
+    \end{equation}
+    En áreas de intensidad constante u homogénea ($I = C$), la convolución entrega exactamente cero ($8C - 8C = 0$), eliminando por completo el fondo plano continuo.
+    \item \textbf{Acentuado y Realce de Bordes (\textit{Image Sharpening}):} La imagen acentuada final $g(x, y)$ se obtiene sumando la respuesta del Laplaciano $\nabla^2 f(x, y)$ a la imagen original $f(x, y)$:
+    \begin{equation}
+        g(x, y) = f(x, y) + \nabla^2 f(x, y) = f(x, y) + (f * K_{\text{acentuado}})(x, y)
+    \end{equation}
+    Dado que el coeficiente central del kernel es positivo ($+8$), este operador actúa como un filtro pasa-altos aditivo (\textit{high-boost}), amplificando las discontinuidades en los bordes y entregando una imagen con notable nitidez y relieve visual.
+\end{enumerate}
+
+La Figura~\ref{fig:demostracion_acentuado} muestra la comparativa del filtro: 1. Imagen Original, 2. Bordes Laplacianos aislados ($\nabla^2 f$), y 3. Imagen Final Acentuada ($f + \nabla^2 f$).
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{imagenes/demostracion_filtro_acentuado.png}
+    \caption{Demostración del filtro espacial de acentuado con máscara Laplaciana $3\times3$ ($K = [-1,-1,-1 / -1,8,-1 / -1,-1,-1]$): Imagen original, mapa de bordes Laplaciano de alta frecuencia e imagen con bordes acentuados.}
+    \label{fig:demostracion_acentuado}
+\end{figure}
+
 % =========================================================
 % 6. BANCO DE PREGUNTAS TÉCNICAS PARA LA SUSTENTACIÓN
 % =========================================================
@@ -546,6 +629,29 @@ Para consolidar la preparación académica y defender los resultados obtenidos a
 
     \item[\textbf{Pregunta 5: ¿Cómo se maneja una imagen a color frente a una en escala de grises?}]~\\
     \textit{Respuesta:} En escala de grises se opera sobre una matriz bidimensional $M \times N$. En color se trabaja sobre un tensor tridimensional $M \times N \times 3$, aplicando el algoritmo de manera desacoplada e idéntica a cada canal cromático (Rojo, Verde y Azul) y recombinándolos posteriormente.
+
+    \item[\textbf{Pregunta 6: ¿Por qué se utilizó la función de biblioteca \texttt{imnoise} para el ruido y no una implementación manual?}]~\\
+    \textit{Respuesta:} Porque el propósito técnico del taller exige programar manualmente las reducciones matriciales, pero para evaluar la respuesta ante perturbaciones se requiere un generador de ruido impulsivo calibrado bajo estándares de procesamiento digital de imágenes. Se utilizó la función de biblioteca especializada \texttt{skimage.util.random\_noise} emulando \texttt{imnoise(I, 'salt \& pepper')}, garantizando una distribución estocástica imparcial y reproducible.
+
+    \item[\textbf{Pregunta 7: ¿Cómo funciona el filtrado de Fourier mediante la declaración de una matriz de ceros y multiplicación de matrices?}]~\\
+    \textit{Respuesta:} Se fundamenta en el Teorema de Convolución: la convolución espacial equivale al producto punto a punto en frecuencia $G(u, v) = F(u, v) \odot H(u, v)$. Se inicializa una matriz de ceros $H$ (\texttt{np.zeros}) del mismo tamaño de la imagen y se configuran con $1.0$ los coeficientes correspondientes (círculo de radio $D_0$ para pasa-bajos; región externa para pasa-altos). Al multiplicar $F$ por $H$, se anulan exactamente las frecuencias deseadas, mitigando el ruido en pasa-bajos o extrayendo bordes en pasa-altos tras la transformada inversa (iFFT).
+
+    \item[\textbf{Pregunta 8: ¿Qué función cumple la matriz de acentuado $[-1, -1, -1; -1, 8, -1; -1, -1, -1]$ y por qué sus coeficientes suman cero?}]~\\
+    \textit{Respuesta:} Corresponde al operador Laplaciano bidimensional de 8 vecinos (derivada de segundo orden discreta). Sus coeficientes suman cero ($8 - 8 = 0$) para anular las componentes continuas en zonas planas homogéneas. Al sumarse a la imagen original ($f + \nabla^2 f$), acentúa de forma selectiva las altas frecuencias en los contornos, incrementando la nitidez y relieve perceptual de los objetos.
+
+    \item[\textbf{Pregunta 9: ¿Por qué el filtro de suavizado espacial se aplica estrictamente DESPUÉS del filtro pasa-bajos de Fourier?}]~\\
+    \textit{Respuesta:} Porque en la metodología de mitigación de ruido y preparación de la imagen para su posterior reducción, el orden secuencial obedece a razones matemáticas concretas:
+    \begin{enumerate}
+        \item \textbf{Atenuación Primaria en Frecuencia (Pasa-Bajos):} El filtro pasa-bajos en Fourier multiplica el espectro $F(u, v)$ por la matriz de transferencia circular $H(u, v)$, anulando de tajo las frecuencias altas donde se dispersa la mayor parte de la energía del ruido sal y pimienta.
+        \item \textbf{Eliminación de Residuos de Gibbs y Anti-Aliasing (Suavizado Espacial):} Al reconstruir la imagen en el espacio mediante la Transformada Inversa ($\text{iFFT}$), la truncación espectral circular genera pequeñas ondulaciones y rizado en las fronteras de los objetos (fenómeno de Gibbs). Aplicar el filtro de suavizado (Gaussiano o Media) \textbf{estrictamente DESPUÉS del pasa-bajos} absorbe estas oscilaciones espaciales residuales y homogeneíza la distribución lumínica. Esto acondiciona la señal antes de aplicar el submuestreo matricial de paso $k \times k$, satisfaciendo rigurosamente el criterio de Nyquist-Shannon y evitando el escalonamiento de bordes (\textit{aliasing}).
+    \end{enumerate}
+
+    \item[\textbf{Pregunta 10: ¿Cuál es el propósito del filtro Laplaciano $3\times3$ y por qué se aplica para aclarar la imagen resultante tras salir de pasa-bajos y suavizado?}]~\\
+    \textit{Respuesta:} El orden y propósito del filtro Laplaciano $3\times3$ ($K = [-1,-1,-1; -1,8,-1; -1,-1,-1]$) responde a la necesidad de recuperar la definición estructural:
+    \begin{enumerate}
+        \item \textbf{Aclarado y Realce Post-Filtrado (No sobre la Original):} El filtro pasa-bajos y el suavizado espacial logran atenuar el ruido y el rizado de Gibbs, pero causan inevitablemente un desenfoque y pérdida de contraste en los bordes. El filtro Laplaciano no actúa sobre la imagen original (que debe preservarse intacta como referencia), sino sobre la imagen suavizada que sale del pasa-bajos.
+        \item \textbf{Inyección de Altas Frecuencias:} Al calcular la segunda derivada espacial $\nabla^2 f$ y sumarla a la señal ($g = f_{\text{suavizada}} + \nabla^2 f_{\text{suavizada}}$), el operador amplifica los gradientes locales y restaura la agudeza visual de los contornos, reflejando una imagen final nítida y perfectamente delimitada antes de la reducción matricial $k \times k$.
+    \end{enumerate}
 \end{description}
 
 % =========================================================

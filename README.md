@@ -118,3 +118,6 @@ $$\text{Factor de Escala Bidimensional} = \frac{1}{k} \times \frac{1}{k} = \frac
 
 3. **¿Cuál es la diferencia entre el método de saltos y el de promedio?**  
    *Saltos descarta píxeles directamente sin procesar; promedio calcula la media de los vecinos actuando como filtro de paso bajo que preserva la luminosidad y atenúa el aliasing.*
+
+4. **¿Por qué se utilizó `imnoise('salt & pepper')` de biblioteca y no programada manualmente?**  
+   *Porque las reducciones matriciales se programaron desde cero (sin `resize` / `imresize`), pero para evaluar la respuesta ante perturbaciones se utilizó la función estándar de biblioteca `skimage.util.random_noise` (equivalente oficial al `imnoise` de MATLAB). Esto garantiza una prueba científica imparcial donde se demuestra que el **Filtro Mediana** elimina el 100% del ruido impulsivo al enviar los ceros y 255 a los extremos del bloque ordenado.*

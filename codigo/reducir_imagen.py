@@ -19,6 +19,25 @@ import sys
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+from skimage.util import random_noise
+
+
+# =============================================================================
+# FUNCIÓN DE RUIDO IMPULSIVO DE BIBLIOTECA (NO PROGRAMADA MANUALMENTE)
+# =============================================================================
+def imnoise(imagen: np.ndarray, tipo: str = 'salt & pepper', amount: float = 0.05) -> np.ndarray:
+    """
+    Añade ruido impulsivo a una imagen utilizando la función estándar de biblioteca 
+    'random_noise' de scikit-image (equivalente directo al imnoise de MATLAB / DIP).
+    
+    NOTA IMPORTANTE:
+    Esta función NO está programada manualmente: utiliza directamente la función
+    especializada 'skimage.util.random_noise' para garantizar rigor científico.
+    """
+    modo = 's&p' if tipo in ('salt & pepper', 'salt and pepper', 's&p', 'sal_y_pimienta') else tipo
+    # Llamada directa a función de biblioteca (scikit-image), sin bucles manuales
+    imagen_con_ruido = random_noise(imagen, mode=modo, amount=amount)
+    return (np.clip(imagen_con_ruido, 0.0, 1.0) * 255).astype(np.uint8)
 
 
 # =============================================================================
@@ -149,6 +168,98 @@ def reducir_por_gaussiana_manual(imagen: np.ndarray, paso: int) -> np.ndarray:
                     val = np.sum(bloque * kernel)
                     reducida[i, j, c] = int(round(np.clip(val, 0, 255)))
     return reducida
+
+
+# =============================================================================
+# MÉTODO 5: FILTRO DE ACENTUADO (MÁSCARA LAPLACIANA 3x3)
+# =============================================================================
+# Matriz exacta requerida:
+# -1 -1 -1
+# -1  8 -1
+# -1 -1 -1
+KERNEL_ACENTUADO_8 = np.array([
+    [-1, -1, -1],
+    [-1,  8, -1],
+    [-1, -1, -1]
+], dtype=np.float32)
+
+
+def aplicar_filtro_acentuado(imagen: np.ndarray, modo: str = 'acentuado') -> np.ndarray:
+    """
+    Aplica el filtro de acentuado / realce espacial con la matriz Laplaciana 3x3:
+        [-1, -1, -1]
+        [-1,  8, -1]
+        [-1, -1, -1]
+        
+    Modos:
+    - 'acentuado': Realce de bordes sumando el Laplaciano a la imagen original:
+                   g(x, y) = clip(f(x, y) + laplaciano(x, y), 0, 255)
+    - 'bordes':    Respuesta pura de bordes del Laplaciano:
+                   g(x, y) = clip(abs(laplaciano(x, y)), 0, 255)
+    """
+    kernel = KERNEL_ACENTUADO_8
+
+    def convolve_canal(canal: np.ndarray) -> np.ndarray:
+        alto, ancho = canal.shape
+        pad = np.pad(canal.astype(np.float32), 1, mode='reflect')
+        lap = (
+            kernel[0, 0] * pad[0:alto, 0:ancho] + kernel[0, 1] * pad[0:alto, 1:ancho+1] + kernel[0, 2] * pad[0:alto, 2:ancho+2] +
+            kernel[1, 0] * pad[1:alto+1, 0:ancho] + kernel[1, 1] * pad[1:alto+1, 1:ancho+1] + kernel[1, 2] * pad[1:alto+1, 2:ancho+2] +
+            kernel[2, 0] * pad[2:alto+2, 0:ancho] + kernel[2, 1] * pad[2:alto+2, 1:ancho+1] + kernel[2, 2] * pad[2:alto+2, 2:ancho+2]
+        )
+        if modo == 'acentuado':
+            salida = canal.astype(np.float32) + lap
+        else:
+            salida = np.abs(lap)
+        return np.clip(np.round(salida), 0, 255).astype(np.uint8)
+
+    if imagen.ndim == 2:
+        return convolve_canal(imagen)
+    else:
+        canales = [convolve_canal(imagen[:, :, c]) for c in range(imagen.shape[2])]
+        return np.stack(canales, axis=2)
+
+
+def reducir_por_acentuado_manual(imagen: np.ndarray, paso: int = 3, modo: str = 'acentuado') -> np.ndarray:
+    """
+    Aplica la reducción dimensional integrando el filtro de acentuado.
+    Para paso = 3, coincide exactamente con la matriz 3x3 de coeficientes:
+        [-1, -1, -1]
+        [-1,  8, -1]
+        [-1, -1, -1]
+    """
+    alto_orig, ancho_orig = imagen.shape[:2]
+    alto_nuevo = alto_orig // paso
+    ancho_nuevo = ancho_orig // paso
+
+    if paso == 3:
+        kernel = KERNEL_ACENTUADO_8
+    else:
+        kernel = -np.ones((paso, paso), dtype=np.float32)
+        cy, cx = paso // 2, paso // 2
+        kernel[cy, cx] = float(paso * paso - 1)
+
+    cy, cx = paso // 2, paso // 2
+
+    def reducir_canal(canal: np.ndarray) -> np.ndarray:
+        res = np.zeros((alto_nuevo, ancho_nuevo), dtype=np.uint8)
+        for i in range(alto_nuevo):
+            for j in range(ancho_nuevo):
+                bloque = canal[i * paso : (i + 1) * paso, j * paso : (j + 1) * paso].astype(np.float32)
+                centro = float(bloque[cy, cx])
+                lap = float(np.sum(bloque * kernel))
+                if modo == 'acentuado':
+                    val = centro + lap
+                else:
+                    val = abs(lap)
+                res[i, j] = int(round(np.clip(val, 0, 255)))
+        return res
+
+    if imagen.ndim == 2:
+        return reducir_canal(imagen)
+    else:
+        canales = [reducir_canal(imagen[:, :, c]) for c in range(imagen.shape[2])]
+        return np.stack(canales, axis=2)
 
 
 # =============================================================================
@@ -380,6 +491,13 @@ def main():
             break
         except ValueError:
             print("Ingrese un número entero válido.")
+
+    aplicar_ruido_opt = input("\n¿Desea inyectar ruido sal y pimienta con imnoise() de biblioteca? (s/N): ").strip().lower() == 's'
+    if aplicar_ruido_opt:
+        densidad_str = input("Densidad de ruido [def: 0.05 / 5%]: ").strip() or "0.05"
+        densidad = float(densidad_str)
+        imagen = imnoise(imagen, tipo='salt & pepper', amount=densidad)
+        print(f"[OK] Ruido inyectado con imnoise('salt & pepper', amount={densidad}) vía scikit-image.")
 
     print(f"\n>>> Reduciendo imagen con salto k = {paso}...")
     reducida_saltos = reducir_por_saltos_manual(imagen, paso)

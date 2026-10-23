@@ -4,34 +4,39 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reducción Matricial de Imágenes - Inteligencia Artificial</title>
+  <title>Reducción y Filtrado Matricial de Imágenes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   <!-- Alpine.js -->
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
   <style>
     :root {
-      --bg: #070A12;
-      --bg-card: rgba(15, 23, 42, 0.78);
-      --bg-inner: #0B1120;
+      --bg: #0A0E17;
+      --bg-panel: #0F1624;
+      --bg-card: #141D2F;
+      --bg-input: #0B101A;
+      
       --border: rgba(255, 255, 255, 0.08);
-      --border-hover: rgba(56, 189, 248, 0.35);
+      --border-hover: rgba(255, 255, 255, 0.18);
+      --border-active: #3B82F6;
       
       --text: #F8FAFC;
       --text-muted: #94A3B8;
       --text-faint: #64748B;
       
-      --cyan: #38BDF8;
-      --blue: #3B82F6;
-      --emerald: #10B981;
-      --amber: #F59E0B;
-      --purple: #A855F7;
+      --primary: #3B82F6;
+      --primary-bg: rgba(59, 130, 246, 0.12);
+      --primary-border: rgba(59, 130, 246, 0.4);
       
-      --radius-sm: 8px;
-      --radius-md: 14px;
-      --radius-lg: 20px;
+      --emerald: #10B981;
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --amber: #F59E0B;
+      --amber-bg: rgba(245, 158, 11, 0.12);
+      
+      --radius-sm: 4px;
+      --radius-md: 8px;
     }
 
     * {
@@ -40,299 +45,473 @@
       padding: 0;
     }
 
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: var(--bg);
-      background-image: 
-        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0, transparent 40%),
-        radial-gradient(circle at 85% 85%, rgba(99, 102, 241, 0.07) 0, transparent 40%);
-      color: var(--text);
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-      line-height: 1.5;
+    /* Scrollbars discretos */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
     }
 
-    /* ─── Header ─── */
+    html, body {
+      height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.4;
+      font-size: 13px;
+    }
+
+    .app-layout {
+      height: 100vh;
+      max-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ─── Encabezado de la Aplicación ─── */
     header {
-      background: rgba(11, 17, 32, 0.85);
-      backdrop-filter: blur(16px);
+      background: var(--bg-panel);
       border-bottom: 1px solid var(--border);
-      padding: 0.9rem 2rem;
+      padding: 0 1rem;
+      height: 48px;
+      min-height: 48px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 50;
+      flex-shrink: 0;
+      z-index: 30;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.9rem;
-    }
-
-    .brand-icon {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius-md);
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(99, 102, 241, 0.28));
-      border: 1px solid rgba(56, 189, 248, 0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.25rem;
+      gap: 0.75rem;
     }
 
     .brand-title {
-      font-size: 1.1rem;
-      font-weight: 800;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-tag {
+      font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 0.15rem 0.45rem;
+      border-radius: 3px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    /* Selector de vistas central */
+    .view-segmented {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .view-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      padding: 0.28rem 0.65rem;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+
+    .view-btn:hover {
       color: #fff;
     }
 
-    .brand-sub {
-      font-size: 0.73rem;
+    .view-btn.active {
+      background: var(--bg-card);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pipeline-status {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-family: 'JetBrains Mono', monospace;
       color: var(--text-muted);
-      font-weight: 500;
     }
 
-    .header-badge {
-      font-size: 0.74rem;
-      font-weight: 700;
-      color: var(--cyan);
-      background: rgba(56, 189, 248, 0.08);
-      border: 1px solid rgba(56, 189, 248, 0.28);
-      padding: 0.35rem 0.85rem;
-      border-radius: 9999px;
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 6px var(--emerald);
     }
 
-    /* ─── Layout ─── */
-    .layout {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 1.5rem 2rem 3rem 2rem;
+    /* ─── Grid Principal de 3 Columnas ─── */
+    .workspace-grid {
+      flex: 1;
+      min-height: 0;
       display: grid;
-      grid-template-columns: minmax(0, 1.2fr) minmax(360px, 420px);
-      gap: 1.5rem;
-      align-items: start;
+      grid-template-columns: 270px minmax(0, 1fr) 290px;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      overflow: hidden;
     }
 
-    @media (max-width: 1024px) {
-      .layout {
-        grid-template-columns: 1fr;
-        padding: 1rem;
+    @media (max-width: 1200px) {
+      .workspace-grid {
+        grid-template-columns: 250px minmax(0, 1fr) 270px;
       }
     }
 
-    /* ─── Cards ─── */
-    .card {
-      background: var(--bg-card);
-      backdrop-filter: blur(14px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 1.15rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+      min-height: 0;
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 2px;
     }
 
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 0.85rem;
+    /* ─── Tarjetas de Control ─── */
+    .control-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.65rem 0.75rem;
+      flex-shrink: 0;
     }
 
     .card-title {
-      font-size: 0.82rem;
-      font-weight: 800;
+      font-size: 0.68rem;
+      font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      justify-content: space-between;
+      margin-bottom: 0.45rem;
     }
 
-    /* ─── Visores de Imagen ─── */
-    .img-box {
-      background: #04070F;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: var(--radius-md);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 280px;
-      max-height: 380px;
-      overflow: hidden;
-    }
-
-    .img-box img {
-      max-width: 100%;
-      max-height: 380px;
-      object-fit: contain;
-      display: block;
-    }
-
-    .img-box.pixelated img {
-      image-rendering: pixelated;
-    }
-
-    .dim-tag {
+    .card-badge {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.74rem;
-      font-weight: 700;
-      padding: 0.22rem 0.6rem;
-      border-radius: var(--radius-sm);
-      background: rgba(11, 17, 32, 0.9);
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      background: var(--bg-input);
       border: 1px solid var(--border);
-      color: var(--cyan);
+      color: var(--text-muted);
     }
 
-    /* ─── BOTONES SIMPLES Y COMPACTOS ─── */
-
-    /* 1. Botones de Carga de Imagen */
-    .upload-group {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.6rem;
+    .card-badge.active-blue {
+      color: var(--primary);
+      border-color: var(--primary-border);
+      background: var(--primary-bg);
     }
 
+    .card-badge.active-amber {
+      color: var(--amber);
+      border-color: rgba(245, 158, 11, 0.4);
+      background: var(--amber-bg);
+    }
+
+    .card-badge.active-emerald {
+      color: var(--emerald);
+      border-color: rgba(16, 185, 129, 0.4);
+      background: var(--emerald-bg);
+    }
+
+    /* ─── Botones y Controles ─── */
     .btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
+      gap: 0.4rem;
       width: 100%;
       border-radius: var(--radius-sm);
-      padding: 0.7rem 1rem;
-      font-size: 0.86rem;
-      font-weight: 700;
+      padding: 0.38rem 0.55rem;
+      font-size: 0.74rem;
+      font-weight: 500;
       cursor: pointer;
       text-decoration: none;
-      transition: all 0.15s ease;
-      user-select: none;
+      transition: all 0.12s ease;
       font-family: inherit;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text);
+    }
+
+    .btn:hover {
+      border-color: var(--border-hover);
+      background: #1a243a;
     }
 
     .btn:active {
       transform: scale(0.98);
     }
 
-    .btn-secondary {
-      background: var(--bg-inner);
-      color: var(--text);
-      border: 1px solid var(--border);
+    .btn.active {
+      background: var(--primary-bg);
+      border-color: var(--primary-border);
+      color: var(--primary);
+      font-weight: 600;
     }
 
-    .btn-secondary:hover {
-      border-color: var(--cyan);
-      color: var(--cyan);
-      background: rgba(56, 189, 248, 0.06);
+    .btn-outline-danger {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.3);
+      background: rgba(248, 113, 113, 0.06);
     }
 
-    /* 2. Botones de Factor de Salto (3x3, 5x5, 7x7) */
-    .paso-grid {
+    .btn-outline-danger:hover {
+      background: rgba(248, 113, 113, 0.14);
+      border-color: #f87171;
+    }
+
+    /* Grids de Selección */
+    .segmented-grid {
       display: grid;
+      gap: 0.3rem;
+    }
+
+    .grid-3 {
       grid-template-columns: repeat(3, 1fr);
-      gap: 0.55rem;
     }
 
-    .paso-btn {
-      background: var(--bg-inner);
+    .grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .select-clean {
+      width: 100%;
+      background: var(--bg-input);
       border: 1px solid var(--border);
-      color: var(--text);
-      padding: 0.65rem 0.5rem;
       border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-weight: 700;
-      text-align: center;
-      font-size: 0.95rem;
+      color: #fff;
       font-family: 'JetBrains Mono', monospace;
-      transition: all 0.15s ease;
-      user-select: none;
+      font-size: 0.72rem;
+      padding: 0.32rem 0.45rem;
+      outline: none;
+      cursor: pointer;
     }
 
-    .paso-btn:hover {
-      border-color: var(--cyan);
-      color: var(--cyan);
+    .select-clean:focus {
+      border-color: var(--primary);
     }
 
-    .paso-btn.active {
-      background: var(--cyan);
-      border-color: var(--cyan);
-      color: #04070F;
-      font-weight: 800;
-      box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+    /* ─── Panel Central: Visualización ─── */
+    .center-viewport {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
     }
 
-    /* 3. Selector de Método de Reducción */
-    .method-grid {
+    .canvas-container {
+      flex: 1;
+      min-height: 0;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0.5rem;
+    }
+
+    .images-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.55rem;
+      gap: 0.5rem;
+      flex: 1;
+      min-height: 0;
     }
 
-    .method-btn {
-      background: var(--bg-inner);
+    .image-pane {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
       border: 1px solid var(--border);
-      color: var(--text-muted);
-      padding: 0.65rem 0.6rem;
       border-radius: var(--radius-sm);
-      cursor: pointer;
-      font-size: 0.85rem;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .image-pane-header {
+      padding: 0.35rem 0.55rem;
+      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.7rem;
       font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .image-frame {
+      flex: 1;
+      min-height: 0;
       display: flex;
       align-items: center;
       justify-content: center;
+      background: #060910;
+      overflow: hidden;
+      padding: 0.4rem;
+    }
+
+    .image-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 2px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .image-frame.pixelated img {
+      image-rendering: pixelated;
+    }
+
+    /* Tira de 5 Etapas */
+    .strip-5-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
       gap: 0.45rem;
-      transition: all 0.15s ease;
-      user-select: none;
+      flex: 1;
+      min-height: 0;
     }
 
-    .method-btn:hover {
-      color: var(--text);
-      border-color: rgba(56, 189, 248, 0.4);
+    .strip-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
     }
 
-    .method-btn.active {
-      border-color: var(--cyan);
-      color: #FFFFFF;
-      background: rgba(56, 189, 248, 0.15);
+    .strip-card-header {
+      padding: 0.35rem 0.45rem;
+      background: rgba(0, 0, 0, 0.25);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .strip-card-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #060910;
+      padding: 0.35rem;
+    }
+
+    .strip-card-body img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    /* ─── Panel Derecho: Métricas y Matriz ─── */
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.35rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .metric-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.4rem 0.5rem;
+    }
+
+    .metric-label {
+      font-size: 0.62rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-faint);
+    }
+
+    .metric-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
       font-weight: 700;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+      color: #fff;
+      margin-top: 0.05rem;
     }
 
-    /* ─── Matriz Numérica Interactiva ─── */
-    .matrix-wrapper {
-      width: 100%;
-      overflow-x: auto;
+    /* Inspector Matricial */
+    .matrix-container {
       display: flex;
       justify-content: center;
-      padding: 0.4rem 0;
+      margin: 0.4rem 0;
     }
 
     .matrix-grid {
       display: grid;
-      gap: 4px;
-      justify-content: center;
+      gap: 2px;
+      background: var(--bg-input);
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
     }
 
     .matrix-cell {
+      border-radius: 2px;
       border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      transition: all 0.15s;
-    }
-
-    .matrix-cell:hover,
-    .matrix-cell:focus-within {
-      border-color: var(--cyan);
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
-      transform: scale(1.05);
-      z-index: 10;
     }
 
     .matrix-cell input {
@@ -340,11 +519,11 @@
       height: 100%;
       background: transparent;
       border: none;
-      color: #fff;
+      outline: none;
       text-align: center;
       font-family: 'JetBrains Mono', monospace;
-      font-weight: 700;
-      outline: none;
+      font-weight: 600;
+      color: #fff;
       padding: 0;
     }
 
@@ -353,217 +532,436 @@
       -webkit-appearance: none;
       margin: 0;
     }
-    .matrix-cell input {
-      -moz-appearance: textfield;
-    }
 
-    .calc-banner {
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      border-radius: var(--radius-md);
-      padding: 0.75rem 0.95rem;
-      margin-top: 0.75rem;
+    .calc-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.45rem 0.55rem;
+      margin-top: 0.35rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.75rem;
+      gap: 0.5rem;
     }
 
-    .calc-val-title {
-      font-size: 0.67rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--emerald);
-    }
-
-    .calc-text {
-      font-size: 0.76rem;
+    .calc-formula {
+      font-size: 0.68rem;
       color: var(--text-muted);
-      line-height: 1.4;
-      margin-top: 0.15rem;
+      line-height: 1.3;
     }
 
-    .calc-val-number {
+    .calc-result {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: var(--emerald);
-      line-height: 1;
-      text-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
-    }
-
-    /* ─── Estadísticas & Descarga ─── */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.55rem;
-      margin-bottom: 0.85rem;
-    }
-
-    .stat-box {
-      background: var(--bg-inner);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.65rem 0.75rem;
-    }
-
-    .stat-title {
-      font-size: 0.67rem;
+      font-size: 1.25rem;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-faint);
-    }
-
-    .stat-number {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 1.1rem;
-      font-weight: 800;
-      color: #fff;
-      margin-top: 0.15rem;
+      color: var(--emerald);
     }
 
     .btn-download {
-      background: linear-gradient(135deg, #10B981, #059669);
+      background: var(--primary);
       color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: var(--radius-sm);
-      padding: 0.85rem 1.2rem;
-      font-weight: 800;
-      font-size: 0.92rem;
+      padding: 0.45rem 0.65rem;
+      font-weight: 600;
+      font-size: 0.76rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.6rem;
+      gap: 0.4rem;
       text-decoration: none;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
-      transition: all 0.15s ease;
+      transition: all 0.12s ease;
     }
 
     .btn-download:hover {
-      background: linear-gradient(135deg, #059669, #047857);
-      box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
-      transform: translateY(-1px);
+      background: #2563EB;
+    }
+
+    /* Pipeline visual breadcrumb */
+    .pipeline-breadcrumb {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.68rem;
+      color: var(--text-muted);
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem 0.45rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+    }
+
+    .pipeline-step.active {
+      border-color: var(--primary-border);
+      color: #fff;
+      background: var(--primary-bg);
     }
   </style>
 </head>
 
 <body>
 
-  <div x-data="app()" x-init="init()">
+  <div class="app-layout" x-data="app()" x-init="init()">
 
-    <!-- Header -->
+    <!-- ─── HEADER MINIMALISTA ─── -->
     <header>
       <div class="brand">
-        <div class="brand-icon">🖼️</div>
-        <div>
-          <h1 class="brand-title">Reducción Matricial de Imágenes</h1>
-          <p class="brand-sub">Inteligencia Artificial • Algoritmos sin imresize / resize</p>
-        </div>
+        <h1 class="brand-title">Reducción Matricial e Imágenes</h1>
+        <span class="brand-tag">DIP 2D</span>
       </div>
 
-      <div class="header-badge">
-        <span>⚡ Modo Interactivo</span>
+      <!-- Selector de Modo de Vista -->
+      <div class="view-segmented">
+        <button type="button" class="view-btn" :class="vistaCentral === 'dividida' ? 'active' : ''" @click="vistaCentral = 'dividida'">
+          Comparativa
+        </button>
+        <button type="button" class="view-btn" :class="vistaCentral === 'tira5' ? 'active' : ''" @click="vistaCentral = 'tira5'">
+          5 Etapas (Fourier)
+        </button>
+        <button type="button" class="view-btn" :class="vistaCentral === 'fourier_matriz' ? 'active' : ''" @click="vistaCentral = 'fourier_matriz'" x-show="fourierData.matriz_h">
+          Máscara H y Espectro
+        </button>
+      </div>
+
+      <!-- Estado Resumido del Pipeline -->
+      <div class="header-actions">
+        <div class="pipeline-status">
+          <span class="status-dot"></span>
+          <span x-text="`${d.orig_width || 0}×${d.orig_height || 0} → ${d.new_width || 0}×${d.new_height || 0}`"></span>
+          <span style="color: var(--emerald);" x-text="`(-${d.savings_pct || 0}%)`"></span>
+        </div>
       </div>
     </header>
 
-    <!-- Layout Principal -->
-    <div class="layout">
+    <!-- ─── WORKSPACE (3 COLUMNAS FIJAS EN PANTALLA) ─── -->
+    <div class="workspace-grid">
 
-      <!-- COLUMNA IZQUIERDA: COMPARATIVA VISUAL -->
-      <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+      <!-- ============================================== -->
+      <!-- COLUMNA 1: CONTROLES DEL PIPELINE             -->
+      <!-- ============================================== -->
+      <div class="side-panel">
 
-        <!-- Tarjeta: Imagen Original -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">🔍 Imagen Original</span>
-            <span class="dim-tag" x-text="`${d.orig_width || 0} × ${d.orig_height || 0} px`"></span>
+        <!-- 1. Imagen Fuente -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Imagen Fuente</span>
           </div>
-          <div class="img-box">
-            <img :src="d.image_orig" alt="Original" x-show="d.image_orig">
+          <div class="segmented-grid grid-2">
+            <input type="file" id="file-input" style="display: none;" accept="image/*" @change="subirImagen($event)">
+            <label for="file-input" class="btn">Cargar archivo</label>
+            <button type="button" class="btn" @click="resetEjemplo()">Restablecer</button>
           </div>
         </div>
 
-        <!-- Tarjeta: Imagen Reducida -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title" style="color: var(--emerald);">✨ Resultado Reducido</span>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-              <span class="dim-tag" style="color: var(--emerald); border-color: rgba(16, 185, 129, 0.4);" x-text="`${d.new_width || 0} × ${d.new_height || 0} px`"></span>
-              <span class="dim-tag" style="color: var(--amber); border-color: rgba(245, 158, 11, 0.4);" x-text="`-${d.savings_pct || 0}% datos`"></span>
-            </div>
+        <!-- 2. Muestreo y Reducción -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Paso de Muestreo</span>
+            <span class="card-badge" x-text="`k = ${paso}`"></span>
           </div>
-          <div class="img-box pixelated">
-            <img :src="d.image_red" alt="Reducida" x-show="d.image_red">
+          <div class="segmented-grid grid-3" style="margin-bottom: 0.45rem;">
+            <template x-for="p in [3, 5, 7]" :key="p">
+              <button type="button" class="btn"
+                :class="paso === p ? 'active' : ''"
+                @click="paso = p; procesar()"
+                x-text="`${p}×${p}`">
+              </button>
+            </template>
+          </div>
+
+          <div class="card-title" style="margin-top: 0.4rem;">
+            <span>Algoritmo de Reducción</span>
+          </div>
+          <div class="segmented-grid grid-2">
+            <template x-for="m in metodos" :key="m.id">
+              <button type="button" class="btn"
+                :class="metodo === m.id ? 'active' : ''"
+                @click="metodo = m.id; procesar()"
+                x-text="m.label">
+              </button>
+            </template>
+          </div>
+        </div>
+
+        <!-- 3. Ruido Sal y Pimienta -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Ruido Sal y Pimienta</span>
+            <span class="card-badge" :class="ruidoActivo ? 'active-amber' : ''" x-text="ruidoActivo ? `${Math.round(densidadRuido*100)}%` : 'Off'"></span>
+          </div>
+          <div class="segmented-grid grid-2" style="align-items: center;">
+            <button type="button" class="btn"
+              :class="ruidoActivo ? 'btn-outline-danger' : ''"
+              @click="toggleRuido()" :disabled="cargando"
+              x-text="ruidoActivo ? 'Quitar ruido' : 'Aplicar imnoise'">
+            </button>
+            <select class="select-clean" x-model.number="densidadRuido" @change="if(ruidoActivo) aplicarRuido()">
+              <option value="0.02">Densidad 2%</option>
+              <option value="0.05">Densidad 5%</option>
+              <option value="0.10">Densidad 10%</option>
+              <option value="0.20">Densidad 20%</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 4. Filtro Fourier 2D y Restauración Post Pasa-Bajos -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Frecuencia (Fourier 2D)</span>
+            <span class="card-badge" :class="fourierActivo ? 'active-blue' : ''" x-text="fourierActivo ? (fourierTipo === 'pasa_bajos' ? 'Pasa Bajos' : 'Pasa Altos') : 'Off'"></span>
+          </div>
+
+          <div class="segmented-grid grid-2" style="margin-bottom: 0.35rem;">
+            <button type="button" class="btn"
+              :class="fourierActivo && fourierTipo === 'pasa_bajos' ? 'active' : ''"
+              @click="aplicarFourier('pasa_bajos')" :disabled="cargando">
+              Pasa bajos
+            </button>
+            <button type="button" class="btn"
+              :class="fourierActivo && fourierTipo === 'pasa_altos' ? 'active' : ''"
+              @click="aplicarFourier('pasa_altos')" :disabled="cargando">
+              Pasa altos
+            </button>
+          </div>
+
+          <div class="segmented-grid grid-2" style="align-items: center; margin-bottom: 0.45rem;">
+            <select class="select-clean" x-model.number="fourierRadio" @change="if(fourierActivo) aplicarFourier(fourierTipo)">
+              <option value="20">Radio D0 = 20 px</option>
+              <option value="35">Radio D0 = 35 px</option>
+              <option value="50">Radio D0 = 50 px</option>
+              <option value="80">Radio D0 = 80 px</option>
+            </select>
+            <button type="button" class="btn btn-outline-danger" x-show="fourierActivo" @click="quitarFourier()" :disabled="cargando">
+              Quitar filtro
+            </button>
+          </div>
+
+          <!-- SECCIÓN: ETAPAS POST-PASA BAJOS (SUAVIZADO Y ACLARADO LAPLACIANO 3×3) -->
+          <div style="border-top: 1px solid var(--border); padding-top: 0.45rem; margin-top: 0.35rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+              <span style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.04em;">
+                Tras Salida Pasa Bajos
+              </span>
+              <span class="card-badge" 
+                :class="(fourierActivo && fourierTipo === 'pasa_bajos') ? 'active-emerald' : ''"
+                x-text="(fourierActivo && fourierTipo === 'pasa_bajos') ? 'Habilitado' : 'Requiere Pasa Bajos'">
+              </span>
+            </div>
+
+            <!-- Paso 1: Suavizado Post -->
+            <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.45rem; margin-bottom: 0.4rem; transition: opacity 0.2s;"
+                 :style="(!fourierActivo || fourierTipo !== 'pasa_bajos') ? 'opacity: 0.4;' : ''">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+                <span style="font-size: 0.68rem; font-weight: 600; color: #fff;">1. Suavizado Post Pasa-Bajos</span>
+                <span class="card-badge" :class="suavizadoPostActivo ? 'active-emerald' : ''" x-text="suavizadoPostActivo ? suavizadoPostTipo : 'Off'"></span>
+              </div>
+              <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.25rem;">
+                Atenúa oscilaciones de Gibbs (ringing) en la imagen filtrada.
+              </div>
+              <div class="segmented-grid grid-2">
+                <button type="button" class="btn"
+                  :class="suavizadoPostActivo && suavizadoPostTipo === 'gaussiano' ? 'active' : ''"
+                  @click="aplicarSuavizadoPost('gaussiano')" :disabled="cargando || !fourierActivo || fourierTipo !== 'pasa_bajos'">
+                  Gaussiano
+                </button>
+                <button type="button" class="btn"
+                  :class="suavizadoPostActivo && suavizadoPostTipo === 'media' ? 'active' : ''"
+                  @click="aplicarSuavizadoPost('media')" :disabled="cargando || !fourierActivo || fourierTipo !== 'pasa_bajos'">
+                  Media 3×3
+                </button>
+              </div>
+              <button type="button" class="btn btn-outline-danger" x-show="suavizadoPostActivo" @click="quitarSuavizadoPost()" :disabled="cargando" style="margin-top: 0.25rem; font-size: 0.66rem; padding: 0.2rem;">
+                Quitar suavizado
+              </button>
+            </div>
+
+            <!-- Paso 2: Filtro Laplaciano 3x3 para Aclarar -->
+            <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.35rem 0.45rem; transition: opacity 0.2s;"
+                 :style="(!fourierActivo || fourierTipo !== 'pasa_bajos') ? 'opacity: 0.4;' : ''">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+                <span style="font-size: 0.68rem; font-weight: 600; color: #fff;">2. Aclarado Laplaciano 3×3</span>
+                <span class="card-badge" :class="acentuadoActivo ? 'active-blue' : ''" x-text="acentuadoActivo ? (acentuadoModo === 'acentuado' ? 'Aclarado' : 'Bordes') : 'Off'"></span>
+              </div>
+              
+              <div style="font-size: 0.62rem; color: var(--text-faint); margin-bottom: 0.25rem; line-height: 1.25;">
+                Aclara la imagen resultante tras salir de Pasa Bajos y Suavizado para restaurar nitidez y bordes atenuados. Se refleja en el resultado final (no sobre la original).
+              </div>
+
+              <!-- Matriz 3x3 exacta -->
+              <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 3px; padding: 0.2rem; margin-bottom: 0.3rem; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 0.66rem; color: var(--text-muted); line-height: 1.2;">
+                <div>-1 &nbsp; -1 &nbsp; -1</div>
+                <div style="color: #38bdf8; font-weight: 700;">-1 &nbsp;&nbsp; 8 &nbsp; -1</div>
+                <div>-1 &nbsp; -1 &nbsp; -1</div>
+              </div>
+
+              <div class="segmented-grid grid-2">
+                <button type="button" class="btn"
+                  :class="acentuadoActivo && acentuadoModo === 'acentuado' ? 'active' : ''"
+                  @click="aplicarAcentuado('acentuado')" :disabled="cargando || !fourierActivo || fourierTipo !== 'pasa_bajos'">
+                  Aclarar (f + ∇²)
+                </button>
+                <button type="button" class="btn"
+                  :class="acentuadoActivo && acentuadoModo === 'bordes' ? 'active' : ''"
+                  @click="aplicarAcentuado('bordes')" :disabled="cargando || !fourierActivo || fourierTipo !== 'pasa_bajos'">
+                  Solo bordes
+                </button>
+              </div>
+              <button type="button" class="btn btn-outline-danger" x-show="acentuadoActivo" @click="quitarAcentuado()" :disabled="cargando" style="margin-top: 0.25rem; font-size: 0.66rem; padding: 0.2rem;">
+                Quitar aclarado
+              </button>
+            </div>
+
           </div>
         </div>
 
       </div>
 
-      <!-- COLUMNA DERECHA: CONTROLES SIMPLES -->
-      <div style="display: flex; flex-direction: column; gap: 1.15rem;">
+      <!-- ============================================== -->
+      <!-- COLUMNA 2: ÁREA CENTRAL DE VISUALIZACIÓN       -->
+      <!-- ============================================== -->
+      <div class="center-viewport">
 
-        <!-- 1. Carga de Imagen (Botones Simples) -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">📁 Fuente de Imagen</span>
-          </div>
-          <div class="upload-group">
-            <input type="file" id="file-input" style="display: none;" accept="image/*" @change="subirImagen($event)">
-            <label for="file-input" class="btn btn-secondary">Subir Foto</label>
-            <button type="button" class="btn btn-secondary" @click="resetEjemplo()">🔄 Por Defecto</button>
-          </div>
+        <div class="canvas-container">
+
+          <!-- Vista 1: Comparativa Lado a Lado (Por Defecto) -->
+          <template x-if="vistaCentral === 'dividida'">
+            <div class="images-row">
+              <!-- Imagen Entrada: REFERENCIA INTACTA (NUNCA ALTERADA POR LOS FILTROS) -->
+              <div class="image-pane">
+                <div class="image-pane-header">
+                  <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span>Entrada (Referencia)</span>
+                    <span class="card-badge" :class="ruidoActivo ? 'active-amber' : ''" x-text="ruidoActivo ? 'Sal y Pimienta' : 'Original'"></span>
+                  </div>
+                  <span style="font-family: 'JetBrains Mono', monospace; color: var(--text-muted);" x-text="`${d.orig_width || 0} × ${d.orig_height || 0} px`"></span>
+                </div>
+                <div class="image-frame">
+                  <img :src="d.image_orig" alt="Entrada" x-show="d.image_orig">
+                </div>
+              </div>
+
+              <!-- Imagen Reducida: RESULTADO FINAL (REFLEJA TODO EL PIPELINE) -->
+              <div class="image-pane">
+                <div class="image-pane-header">
+                  <div style="display: flex; align-items: center; gap: 0.35rem; overflow: hidden;">
+                    <span style="color: var(--emerald); flex-shrink: 0;">Resultado Final</span>
+                    <span class="card-badge active-blue" x-show="fourierActivo && fourierTipo === 'pasa_bajos'">Pasa Bajos</span>
+                    <span class="card-badge active-emerald" x-show="suavizadoPostActivo">Suavizado</span>
+                    <span class="card-badge" style="color: #ec4899; border-color: rgba(236,72,153,0.4);" x-show="acentuadoActivo">Aclarado 3×3</span>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0;">
+                    <div class="view-segmented" style="padding: 1px;">
+                      <button type="button" class="view-btn" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;"
+                        :class="modoVistaSalida === 'reducida' ? 'active' : ''" @click="modoVistaSalida = 'reducida'">
+                        Reducida
+                      </button>
+                      <button type="button" class="view-btn" style="font-size: 0.65rem; padding: 0.15rem 0.4rem;"
+                        :class="modoVistaSalida === 'hd' ? 'active' : ''" @click="modoVistaSalida = 'hd'">
+                        1:1 Aclarada
+                      </button>
+                    </div>
+
+                    <div style="display: flex; gap: 0.35rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;">
+                      <span style="color: var(--emerald);" x-text="modoVistaSalida === 'hd' ? `${d.orig_width || 0}×${d.orig_height || 0} px` : `${d.new_width || 0}×${d.new_height || 0} px`"></span>
+                      <span style="color: var(--amber);" x-show="modoVistaSalida === 'reducida'" x-text="`-${d.savings_pct || 0}%`"></span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="image-frame" :class="modoVistaSalida === 'reducida' ? 'pixelated' : ''">
+                  <img :src="modoVistaSalida === 'hd' ? (d.image_proc_hd || d.image_red) : d.image_red" alt="Resultado" x-show="d.image_red">
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Vista 2: Tira de 5 Etapas Canónica de Fourier y Aclarado -->
+          <template x-if="vistaCentral === 'tira5'">
+            <div style="height: 100%; display: flex; flex-direction: column;">
+              <div style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem; display: flex; justify-content: space-between; align-items: center;">
+                <span>Secuencia: 1. Original → 2. Ruido imnoise → 3. Pasa Bajos → 4. Suavizado Post → 5. Aclarado Laplaciano 3×3</span>
+                <button type="button" class="btn" style="width: auto; padding: 0.2rem 0.5rem; font-size: 0.68rem;" @click="cargarTira5()">Actualizar tira</button>
+              </div>
+              <div class="strip-5-grid" x-show="tira5Data.img_orig">
+                <div class="strip-card">
+                  <div class="strip-card-header">1. Original</div>
+                  <div class="strip-card-body"><img :src="tira5Data.img_orig" alt="Original"></div>
+                </div>
+                <div class="strip-card">
+                  <div class="strip-card-header" style="color: var(--amber);">2. Ruido (imnoise)</div>
+                  <div class="strip-card-body"><img :src="tira5Data.img_ruido" alt="Ruido"></div>
+                </div>
+                <div class="strip-card">
+                  <div class="strip-card-header" style="color: var(--emerald);">3. Pasa Bajos</div>
+                  <div class="strip-card-body"><img :src="tira5Data.img_bajos" alt="Pasa Bajos"></div>
+                </div>
+                <div class="strip-card">
+                  <div class="strip-card-header" style="color: #38bdf8;">4. Suavizado Post</div>
+                  <div class="strip-card-body"><img :src="tira5Data.img_suavizado || tira5Data.img_bajos" alt="Suavizado Post"></div>
+                </div>
+                <div class="strip-card">
+                  <div class="strip-card-header" style="color: #ec4899;">5. Aclarado Laplaciano 3×3</div>
+                  <div class="strip-card-body"><img :src="tira5Data.img_laplaciano || tira5Data.img_suavizado || tira5Data.img_bajos" alt="Laplaciano 3x3"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Vista 3: Matriz H y Espectro -->
+          <template x-if="vistaCentral === 'fourier_matriz'">
+            <div style="height: 100%; display: flex; flex-direction: column;">
+              <div style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">
+                Teorema de Convolución en Frecuencia: G(u, v) = F(u, v) · H(u, v)
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; flex: 1; min-height: 0;">
+                <div class="strip-card">
+                  <div class="strip-card-header">1. Espectro Entrada |F|</div>
+                  <div class="strip-card-body"><img :src="fourierData.espectro_orig" alt="Espectro F"></div>
+                </div>
+                <div class="strip-card">
+                  <div class="strip-card-header" style="color: var(--primary);">2. Máscara H (Ceros)</div>
+                  <div class="strip-card-body"><img :src="fourierData.matriz_h" alt="Matriz H"></div>
+                </div>
+                <div class="strip-card">
+                  <div class="strip-card-header" style="color: var(--emerald);">3. Espectro Filtrado |G|</div>
+                  <div class="strip-card-body"><img :src="fourierData.espectro_filt" alt="Espectro G"></div>
+                </div>
+              </div>
+            </div>
+          </template>
+
         </div>
 
-        <!-- 2. Factor de Salto (Botones Simples 3x3, 5x5, 7x7) -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">📐 Factor de Salto (Matrices Impares)</span>
-          </div>
-          <div class="paso-grid">
-            <template x-for="p in [3, 5, 7]" :key="p">
-              <button type="button" class="paso-btn"
-                :class="paso === p ? 'active' : ''"
-                @click="paso = p; procesar()"
-                x-text="`${p} × ${p}`">
-              </button>
-            </template>
-          </div>
-        </div>
+      </div>
 
-        <!-- 3. Selector de Método (Botones Simples 2x2) -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">⚙️ Método de Reducción</span>
-          </div>
-          <div class="method-grid">
-            <template x-for="m in metodos" :key="m.id">
-              <button type="button" class="method-btn"
-                :class="metodo === m.id ? 'active' : ''"
-                @click="metodo = m.id; procesar()">
-                <span x-text="m.icon"></span>
-                <span x-text="m.label"></span>
-              </button>
-            </template>
-          </div>
-        </div>
+      <!-- ============================================== -->
+      <!-- COLUMNA 3: INSPECTOR Y MÉTRICAS                -->
+      <!-- ============================================== -->
+      <div class="side-panel">
 
-        <!-- 4. Matriz Numérica Interactiva -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">🔢 Matriz Numérica del Bloque</span>
+        <!-- 1. Inspector de Bloque Matricial -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Inspector de Bloque</span>
+            <span class="card-badge" x-text="`${paso}×${paso}`"></span>
           </div>
 
-          <div class="matrix-wrapper">
+          <div class="matrix-container">
             <div class="matrix-grid" :style="`grid-template-columns: repeat(${paso}, ${cellSize}px)`">
               <template x-for="(row, ri) in matriz" :key="ri">
                 <template x-for="(val, ci) in row" :key="ci">
                   <div class="matrix-cell"
-                    :style="`width:${cellSize}px; height:${cellSize - 6}px; background:rgba(56,189,248,${0.08 + (val/255)*0.38})`">
+                    :style="`width:${cellSize}px; height:${cellSize - 4}px; background:rgba(59,130,246,${0.08 + (val/255)*0.38})`">
                     <input type="number" min="0" max="255"
-                      :style="`font-size:${paso === 7 ? '0.75rem' : '0.85rem'}`"
+                      :style="`font-size:${paso === 7 ? '0.68rem' : '0.78rem'}`"
                       x-model.number="matriz[ri][ci]" @input="simularMatriz()">
                   </div>
                 </template>
@@ -571,45 +969,87 @@
             </div>
           </div>
 
-          <!-- Banner de Cálculo -->
-          <div class="calc-banner">
-            <div>
-              <div class="calc-val-title">Píxel Resultante</div>
-              <p class="calc-text" x-text="d.matrix_explanation || 'Calculando...'"></p>
+          <!-- Acciones de Matriz -->
+          <div class="segmented-grid grid-2" style="margin-top: 0.35rem;">
+            <button type="button" class="btn" style="font-size: 0.68rem;" @click="inyectarRuidoMatriz()">
+              Inyectar ruido
+            </button>
+            <button type="button" class="btn" style="font-size: 0.68rem;" @click="restaurarMatriz()">
+              Restablecer
+            </button>
+          </div>
+
+          <!-- Resultado Matemático Directo -->
+          <div class="calc-box">
+            <div style="overflow: hidden;">
+              <div style="font-size: 0.62rem; text-transform: uppercase; color: var(--text-faint); font-weight: 600;">Píxel Calculado</div>
+              <div class="calc-formula" x-text="d.matrix_explanation || 'Calculando...'"></div>
             </div>
-            <div class="calc-val-number" x-text="d.matrix_result ?? '-'"></div>
+            <div class="calc-result" x-text="d.matrix_result ?? '-'"></div>
           </div>
         </div>
 
-        <!-- 5. Estadísticas y Descarga -->
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">📊 Estadísticas</span>
+        <!-- 2. Métricas Numéricas -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Métricas de Reducción</span>
           </div>
 
-          <div class="stats-grid">
-            <div class="stat-box">
-              <div class="stat-title">Píxeles Originales</div>
-              <div class="stat-number" x-text="d.orig_pixels ? d.orig_pixels.toLocaleString() : '0'"></div>
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <div class="metric-label">Píxeles Entrada</div>
+              <div class="metric-value" x-text="d.orig_pixels ? d.orig_pixels.toLocaleString() : '0'"></div>
             </div>
-            <div class="stat-box">
-              <div class="stat-title" style="color: var(--emerald);">Píxeles Reducidos</div>
-              <div class="stat-number" style="color: var(--emerald);" x-text="d.new_pixels ? d.new_pixels.toLocaleString() : '0'"></div>
+            <div class="metric-box">
+              <div class="metric-label" style="color: var(--emerald);">Píxeles Salida</div>
+              <div class="metric-value" style="color: var(--emerald);" x-text="d.new_pixels ? d.new_pixels.toLocaleString() : '0'"></div>
             </div>
-            <div class="stat-box">
-              <div class="stat-title" style="color: var(--amber);">Datos Ahorrados</div>
-              <div class="stat-number" style="color: var(--amber);" x-text="`${d.savings_pct || 0}%`"></div>
+            <div class="metric-box">
+              <div class="metric-label" style="color: var(--amber);">Ahorro de Memoria</div>
+              <div class="metric-value" style="color: var(--amber);" x-text="`${d.savings_pct || 0}%`"></div>
             </div>
-            <div class="stat-box">
-              <div class="stat-title" style="color: var(--cyan);">Factor Bloque</div>
-              <div class="stat-number" style="color: var(--cyan);" x-text="`1 / ${paso * paso}`"></div>
+            <div class="metric-box">
+              <div class="metric-label">Factor Escala</div>
+              <div class="metric-value" x-text="`1 / ${paso * paso}`"></div>
             </div>
           </div>
 
-          <!-- Botón de Descarga Simple -->
           <a :href="d.image_red" :download="`reducida_${metodo}_x${paso}.png`" class="btn-download">
-            💾 Descargar Imagen Reducida (PNG)
+            Descargar imagen procesada
           </a>
+        </div>
+
+        <!-- 3. Flujo Activo del Pipeline -->
+        <div class="control-card">
+          <div class="card-title">
+            <span>Cadena de Procesamiento</span>
+          </div>
+          <div class="pipeline-breadcrumb">
+            <div class="pipeline-step active">
+              <span>1. Imagen Fuente</span>
+              <span x-text="`${d.orig_width || 0}×${d.orig_height || 0}`"></span>
+            </div>
+            <div class="pipeline-step" :class="ruidoActivo ? 'active' : ''">
+              <span>2. Ruido Sal y Pimienta</span>
+              <span x-text="ruidoActivo ? `${Math.round(densidadRuido*100)}%` : 'Inactivo'"></span>
+            </div>
+            <div class="pipeline-step" :class="(fourierActivo && fourierTipo === 'pasa_bajos') ? 'active' : ''">
+              <span>3. Fourier Pasa Bajos</span>
+              <span x-text="(fourierActivo && fourierTipo === 'pasa_bajos') ? `${fourierRadio}px` : (fourierActivo ? 'Pasa Altos' : 'Inactivo')"></span>
+            </div>
+            <div class="pipeline-step" :class="(suavizadoPostActivo && fourierTipo === 'pasa_bajos') ? 'active' : ''">
+              <span>4. Suavizado Post Pasa-Bajos</span>
+              <span x-text="(suavizadoPostActivo && fourierTipo === 'pasa_bajos') ? suavizadoPostTipo : 'Inactivo'"></span>
+            </div>
+            <div class="pipeline-step" :class="(acentuadoActivo && fourierActivo && fourierTipo === 'pasa_bajos') ? 'active' : ''">
+              <span>5. Aclarado Laplaciano 3×3</span>
+              <span x-text="(acentuadoActivo && fourierActivo && fourierTipo === 'pasa_bajos') ? acentuadoModo : 'Inactivo'"></span>
+            </div>
+            <div class="pipeline-step active">
+              <span>6. Reducción Matricial</span>
+              <span x-text="`${metodo} (${paso}×${paso})`"></span>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -621,29 +1061,45 @@
   <script>
     function app() {
       return {
+        vistaCentral: 'dividida', // 'dividida' | 'tira5' | 'fourier_matriz'
+        modoVistaSalida: 'reducida', // 'reducida' | 'hd'
         paso: 3,
         metodo: 'media',
+        ruidoActivo: false,
+        densidadRuido: 0.05,
+        fourierActivo: false,
+        fourierTipo: 'pasa_bajos',
+        fourierRadio: 35,
+        fourierData: {},
+        tira5Data: {},
+        acentuadoActivo: false,
+        acentuadoModo: 'acentuado',
+        suavizadoPostActivo: false,
+        suavizadoPostTipo: 'gaussiano',
+        cargando: false,
         matriz: [
           [100, 105, 102],
           [110, 115, 112],
           [108, 112, 110]
         ],
         metodos: [
-          { id: 'saltos',    icon: '⚡', label: 'Saltos' },
-          { id: 'media',     icon: '📊', label: 'Media' },
-          { id: 'mediana',   icon: '🎯', label: 'Mediana' },
-          { id: 'gaussiana', icon: '🌊', label: 'Gaussiana' }
+          { id: 'saltos',    label: 'Saltos' },
+          { id: 'media',     label: 'Promedio' },
+          { id: 'mediana',   label: 'Mediana' },
+          { id: 'gaussiana', label: 'Gaussiana' },
+          { id: 'acentuado', label: 'Acentuado' }
         ],
         d: {},
 
         get cellSize() {
-          if (this.paso === 7) return 40;
-          if (this.paso === 5) return 48;
-          return 58;
+          if (this.paso === 7) return 32;
+          if (this.paso === 5) return 40;
+          return 50;
         },
 
         async init() {
           await this.procesar();
+          this.cargarTira5();
         },
 
         async procesar() {
@@ -654,11 +1110,231 @@
               body: JSON.stringify({ paso: this.paso, metodo: this.metodo })
             });
             this.d = await res.json();
+            if (this.d.ruido_activo !== undefined) {
+              this.ruidoActivo = this.d.ruido_activo;
+            }
+            if (this.d.fourier_activo !== undefined) {
+              this.fourierActivo = this.d.fourier_activo;
+              if (this.d.fourier_tipo) this.fourierTipo = this.d.fourier_tipo;
+              if (this.d.fourier_radio) this.fourierRadio = this.d.fourier_radio;
+            }
+            if (this.d.acentuado_activo !== undefined) {
+              this.acentuadoActivo = this.d.acentuado_activo;
+              if (this.d.acentuado_modo) this.acentuadoModo = this.d.acentuado_modo;
+            }
+            if (this.d.suavizado_post_activo !== undefined) {
+              this.suavizadoPostActivo = this.d.suavizado_post_activo;
+              if (this.d.suavizado_post_tipo) this.suavizadoPostTipo = this.d.suavizado_post_tipo;
+            }
             if (this.d.matrix_sample) {
               this.matriz = this.d.matrix_sample;
             }
           } catch (e) {
             console.error('Error al procesar reducción:', e);
+          }
+        },
+
+        async toggleRuido() {
+          if (this.ruidoActivo) {
+            await this.quitarRuido();
+          } else {
+            await this.aplicarRuido();
+          }
+        },
+
+        async aplicarRuido() {
+          try {
+            this.cargando = true;
+            this.fourierActivo = false;
+            const res = await fetch('/api/aplicar-ruido', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cantidad: this.densidadRuido })
+            });
+            const r = await res.json();
+            if (r.success) {
+              this.ruidoActivo = true;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al aplicar imnoise:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async quitarRuido() {
+          try {
+            this.cargando = true;
+            this.fourierActivo = false;
+            const res = await fetch('/api/quitar-ruido', { method: 'POST' });
+            const r = await res.json();
+            if (r.success) {
+              this.ruidoActivo = false;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al quitar ruido:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async aplicarFourier(tipo) {
+          try {
+            this.cargando = true;
+            this.fourierTipo = tipo;
+            const res = await fetch('/api/aplicar-fourier', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tipo: tipo, radio: this.fourierRadio })
+            });
+            const r = await res.json();
+            if (r.success) {
+              this.fourierActivo = true;
+              this.fourierData = r;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al aplicar Fourier:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async quitarFourier() {
+          try {
+            this.cargando = true;
+            const res = await fetch('/api/quitar-fourier', { method: 'POST' });
+            const r = await res.json();
+            if (r.success) {
+              this.fourierActivo = false;
+              this.fourierData = {};
+              this.suavizadoPostActivo = false;
+              this.acentuadoActivo = false;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al quitar Fourier:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async aplicarAcentuado(modo) {
+          try {
+            this.cargando = true;
+            this.acentuadoModo = modo;
+            const res = await fetch('/api/aplicar-acentuado', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ modo: modo })
+            });
+            const r = await res.json();
+            if (r.success) {
+              this.acentuadoActivo = true;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al aplicar acentuado:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async quitarAcentuado() {
+          try {
+            this.cargando = true;
+            const res = await fetch('/api/quitar-acentuado', { method: 'POST' });
+            const r = await res.json();
+            if (r.success) {
+              this.acentuadoActivo = false;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al quitar acentuado:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async aplicarSuavizadoPost(tipo) {
+          try {
+            this.cargando = true;
+            this.suavizadoPostTipo = tipo;
+            const res = await fetch('/api/aplicar-suavizado-post', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tipo: tipo })
+            });
+            const r = await res.json();
+            if (r.success) {
+              this.suavizadoPostActivo = true;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al aplicar suavizado post:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async quitarSuavizadoPost() {
+          try {
+            this.cargando = true;
+            const res = await fetch('/api/quitar-suavizado-post', { method: 'POST' });
+            const r = await res.json();
+            if (r.success) {
+              this.suavizadoPostActivo = false;
+              await this.procesar();
+              this.cargarTira5();
+            }
+          } catch (e) {
+            console.error('Error al quitar suavizado post:', e);
+          } finally {
+            this.cargando = false;
+          }
+        },
+
+        async cargarTira5() {
+          try {
+            const res = await fetch('/api/comparativa-fourier-5-etapas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ radio: this.fourierRadio, cantidad_ruido: this.densidadRuido })
+            });
+            const r = await res.json();
+            if (r.success) {
+              this.tira5Data = r;
+            }
+          } catch (e) {
+            console.error('Error al cargar tira de 5 etapas:', e);
+          }
+        },
+
+        inyectarRuidoMatriz() {
+          const p = this.paso;
+          if (!this.matriz || this.matriz.length < p) return;
+          this.matriz[0][0] = 255;
+          this.matriz[p - 1][p - 1] = 0;
+          if (p >= 5) {
+            this.matriz[0][p - 1] = 255;
+            this.matriz[p - 1][0] = 0;
+          }
+          this.simularMatriz();
+        },
+
+        async restaurarMatriz() {
+          if (this.d.matrix_sample) {
+            this.matriz = JSON.parse(JSON.stringify(this.d.matrix_sample));
+            this.simularMatriz();
           }
         },
 
@@ -682,8 +1358,13 @@
           const fd = new FormData();
           fd.append('archivo', e.target.files[0]);
           try {
+            this.ruidoActivo = false;
+            this.fourierActivo = false;
+            this.acentuadoActivo = false;
+            this.suavizadoPostActivo = false;
             await fetch('/api/subir-imagen', { method: 'POST', body: fd });
             await this.procesar();
+            this.cargarTira5();
           } catch (e) {
             console.error('Error al subir imagen:', e);
           }
@@ -691,8 +1372,13 @@
 
         async resetEjemplo() {
           try {
+            this.ruidoActivo = false;
+            this.fourierActivo = false;
+            this.acentuadoActivo = false;
+            this.suavizadoPostActivo = false;
             await fetch('/api/cargar-ejemplo', { method: 'POST' });
             await this.procesar();
+            this.cargarTira5();
           } catch (e) {
             console.error('Error al cargar ejemplo:', e);
           }
